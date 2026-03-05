@@ -2,6 +2,5 @@ import "base/map.sabaka";
 
 Map<string, int> map = new Map <string, int>();
 
-map.put("one", 1);
-map.printLines();
-print(map.get("one"));
+map.set("one", 1);
+print(map.size());
