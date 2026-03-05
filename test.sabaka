@@ -1,7 +1,5 @@
-import "base/map.sabaka";
+import "base/math.sabaka";
 
-Map<int, int> m = new Map<int, int>();
-
-m.set(1, 2);
-
-m.print();
+print(ceil(3.5));
+print(floor(3.5));
+print(round(3.5));

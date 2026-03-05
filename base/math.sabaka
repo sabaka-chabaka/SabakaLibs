@@ -1,0 +1,52 @@
+float PI = 3.1415927;
+float TWO_PI = 6.2831853;
+float E = 2.7182818;
+
+int ceil(float x){
+    int i = round(x);
+    if (x > i) {
+        return i + 1;
+    }
+    return i;
+}
+
+int floor(float x) {
+    int i = 0;
+
+    if (x >= 0) {
+        while (i + 1 <= x) {
+            i = i + 1;
+        }
+        return i;
+    }
+
+    while (i > x) {
+        i = i - 1;
+    }
+
+    return i;
+}
+
+
+int round(float x) {
+    int f = floor(x);
+    if (x - f >= 0.5) {
+        return f + 1;
+    }
+
+    return f;
+}
+
+int min(int a, int b) {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
