@@ -1,5 +1,20 @@
+import "base/list.sabaka";
+import "base/map.sabaka";
 import "base/math.sabaka";
 
-print(ceil(3.5));
-print(floor(3.5));
-print(round(3.5));
+List<int> l = new List<int>();
+l.push_back(1);
+l.push_back(2);
+l.push_back(3);
+l.print();
+
+Map<string, int> m = new Map<string, int>();
+m.set("one", 1);
+m.set("two", 2);
+m.set("three", 3);
+m.print();
+
+int a = 10;
+int b = 20;
+int c = max(a, b);
+print("Max of " + a + " and " + b + " is " + c);
