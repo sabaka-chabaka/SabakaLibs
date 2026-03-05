@@ -1,0 +1,50 @@
+class Map<T, U>{
+    T[] keys = [];
+    U[] values = [];
+
+    void put(T key, U value){
+        for(int i = 0; i < keys.length; i = i + 1){
+            if(keys[i] == key){
+                values[i] = value;
+                return;
+            }
+        }
+        T[] newKeys = [];
+        U[] newValues = [];
+        for(int i = 0; i < keys.length; i = i + 1){
+            newKeys[i] = keys[i];
+            newValues[i] = values[i];
+        }
+        newKeys[keys.length] = key;
+        newValues[keys.length] = value;
+        keys = newKeys;
+        values = newValues;
+    }
+
+    U get(T key){
+        for(int i = 0; i < keys.length; i = i + 1){
+            if(keys[i] == key){
+                return values[i];
+            }
+        }
+        return;
+    }
+
+    void print(){
+            print(keys);
+            print(values);
+    }
+
+    void printLines(){
+        for(int i = 0; i < keys.length; i = i + 1){
+            print(keys[i] + ": " + values[i]);
+        }
+    }
+
+    void clear(){
+        keys = [];
+        values = [];
+    }
+
+    void Map() {}
+}

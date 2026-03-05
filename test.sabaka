@@ -1,7 +1,7 @@
-import "base/list.sabaka";
+import "base/map.sabaka";
 
-List<int> list = new List<int>();
+Map<string, int> map = new Map <string, int>();
 
-list.push_back(1);
-
-list.printLines();
+map.put("one", 1);
+map.printLines();
+print(map.get("one"));
