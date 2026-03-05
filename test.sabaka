@@ -1,6 +1,4 @@
-import "base/map.sabaka";
+import "base/string.sabaka";
 
-Map<string, int> map = new Map <string, int>();
-
-map.set("one", 1);
-print(map.size());
+List<string> parts = split("hello world foo", " ");
+parts.printLines();

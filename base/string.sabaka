@@ -1,0 +1,53 @@
+import "list.sabaka";
+
+int indexOfFrom(string haystack, string needle, int from) {
+    int hLen = haystack.length;
+    int nLen = needle.length;
+
+    if (nLen == 0) return from;
+    if (nLen > hLen) return -1;
+
+    int i = from;
+    while (i <= hLen - nLen) {
+        int j = 0;
+        while (j < nLen) {
+            if (haystack[i + j] != needle[j]) {
+                j = nLen;
+            } else {
+                j = j + 1;
+            }
+        }
+        if (j == nLen) return i;
+        i = i + 1;
+    }
+    return -1;
+}
+
+int indexOf(string haystack, string needle) {
+    return indexOfFrom(haystack, needle, 0);
+}
+
+string substring(string s, int start, int end) {
+    string result = "";
+    int i = start;
+    while (i < end) {
+        result = result + s[i];
+        i = i + 1;
+    }
+    return result;
+}
+
+List<string> split(string s, string delimiter) {
+    List<string> result = new List<string>();
+    int start = 0;
+    int index = indexOfFrom(s, delimiter, start);
+
+    while (index != -1) {
+        result.push_back(substring(s, start, index));
+        start = index + delimiter.length;
+        index = indexOfFrom(s, delimiter, start);
+    }
+
+    result.push_back(substring(s, start, s.length));
+    return result;
+}
