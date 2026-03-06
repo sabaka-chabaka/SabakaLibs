@@ -1,8 +1,31 @@
 float PI = 3.1415927;
 float TWO_PI = 6.2831853;
+float HALF_PI = 1.5707963;
 float E = 2.7182818;
 
-int ceil(float x){
+int floor(float x) {
+    int i = 0;
+    if (x >= 0) {
+        while (i + 1 <= x) {
+            i = i + 1;
+        }
+        return i;
+    }
+    while (i > x) {
+        i = i - 1;
+    }
+    return i;
+}
+
+int round(float x) {
+    int f = floor(x);
+    if (x - f >= 0.5) {
+        return f + 1;
+    }
+    return f;
+}
+
+int ceil(float x) {
     int i = round(x);
     if (x > i) {
         return i + 1;
@@ -10,43 +33,99 @@ int ceil(float x){
     return i;
 }
 
-int floor(float x) {
-    int i = 0;
-
-    if (x >= 0) {
-        while (i + 1 <= x) {
-            i = i + 1;
-        }
-        return i;
-    }
-
-    while (i > x) {
-        i = i - 1;
-    }
-
-    return i;
-}
-
-
-int round(float x) {
-    int f = floor(x);
-    if (x - f >= 0.5) {
-        return f + 1;
-    }
-
-    return f;
-}
-
 int min(int a, int b) {
-    if (a < b) {
-        return a;
-    }
+    if (a < b) { return a; }
     return b;
 }
 
 int max(int a, int b) {
-    if (a > b) {
-        return a;
-    }
+    if (a > b) { return a; }
     return b;
+}
+
+float minf(float a, float b) {
+    if (a < b) { return a; }
+    return b;
+}
+
+float maxf(float a, float b) {
+    if (a > b) { return a; }
+    return b;
+}
+
+int abs(int x) {
+    if (x < 0) { return 0 - x; }
+    return x;
+}
+
+float absf(float x) {
+    if (x < 0) { return 0 - x; }
+    return x;
+}
+
+int clamp(int x, int lo, int hi) {
+    if (x < lo) { return lo; }
+    if (x > hi) { return hi; }
+    return x;
+}
+
+float clampf(float x, float lo, float hi) {
+    if (x < lo) { return lo; }
+    if (x > hi) { return hi; }
+    return x;
+}
+
+float pow(float base, int exp) {
+    if (exp == 0) { return 1; }
+    float result = 1;
+    int i = 0;
+    bool negative = false;
+    if (exp < 0) {
+        negative = true;
+        exp = 0 - exp;
+    }
+    while (i < exp) {
+        result = result * base;
+        i = i + 1;
+    }
+    if (negative) {
+        result = 1 / result;
+    }
+    return result;
+}
+
+float sqrt(float x) {
+    if (x < 0) { return 0; }
+    if (x == 0) { return 0; }
+    float guess = x / 2;
+    int i = 0;
+    while (i < 50) {
+        float better = (guess + x / guess) / 2;
+        float diff = better - guess;
+        if (diff < 0) { diff = 0 - diff; }
+        if (diff < 0.00001) {
+            guess = better;
+            i = 50;
+        } else {
+            guess = better;
+            i = i + 1;
+        }
+    }
+    return guess;
+}
+
+float lerp(float a, float b, float t) {
+    return a + (b - a) * t;
+}
+
+int sign(int x) {
+    if (x > 0) { return 1; }
+    if (x < 0) { return -1; }
+    return 0;
+}
+
+float signf(float x) {
+    if (x > 0) { return 1; }
+    if (x < 0) { return -1; }
+    return 0;
 }

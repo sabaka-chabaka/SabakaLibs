@@ -1,0 +1,116 @@
+import "math.sabaka";
+
+class DateTime {
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int second = 0;
+    int ms = 0;
+
+    bool isLeapYear(int y) {
+        if ((y - (y / 4) * 4) != 0) { return false; }
+        if ((y - (y / 100) * 100) != 0) { return true; }
+        if ((y - (y / 400) * 400) != 0) { return false; }
+        return true;
+    }
+
+    int daysInMonth(int m, int y) {
+        if (m == 1) { return 31; }
+        if (m == 2) {
+            if (isLeapYear(y)) { return 29; }
+            return 28;
+        }
+        if (m == 3) { return 31; }
+        if (m == 4) { return 30; }
+        if (m == 5) { return 31; }
+        if (m == 6) { return 30; }
+        if (m == 7) { return 31; }
+        if (m == 8) { return 31; }
+        if (m == 9) { return 30; }
+        if (m == 10) { return 31; }
+        if (m == 11) { return 30; }
+        return 31;
+    }
+
+    string pad2(int n) {
+        if (n < 10) { return "0" + n; }
+        return "" + n;
+    }
+
+    void fromMs(int timestamp) {
+        int s = timestamp / 1000;
+        ms = timestamp - s * 1000;
+
+        second = s - (s / 60) * 60;
+        int totalMin = s / 60;
+        minute = totalMin - (totalMin / 60) * 60;
+        int totalHour = totalMin / 60;
+        hour = totalHour - (totalHour / 24) * 24;
+
+        int days = totalHour / 24;
+
+        year = 1970;
+        bool running = true;
+        while (running) {
+            int daysInYear = 365;
+            if (isLeapYear(year)) { daysInYear = 366; }
+            if (days >= daysInYear) {
+                days = days - daysInYear;
+                year = year + 1;
+            } else {
+                running = false;
+            }
+        }
+
+        month = 1;
+        running = true;
+        while (running) {
+            int dim = daysInMonth(month, year);
+            if (days >= dim) {
+                days = days - dim;
+                month = month + 1;
+            } else {
+                running = false;
+            }
+        }
+
+        day = days + 1;
+    }
+
+    int toMs() {
+        int days = 0;
+        int y = 1970;
+        while (y < year) {
+            int daysInYear = 365;
+            if (isLeapYear(y)) { daysInYear = 366; }
+            days = days + daysInYear;
+            y = y + 1;
+        }
+        int m = 1;
+        while (m < month) {
+            days = days + daysInMonth(m, year);
+            m = m + 1;
+        }
+        days = days + day - 1;
+        int totalSeconds = days * 86400 + hour * 3600 + minute * 60 + second;
+        return totalSeconds * 1000 + ms;
+    }
+
+    string toDateString() {
+        return "" + year + "-" + pad2(month) + "-" + pad2(day);
+    }
+
+    string toTimeString() {
+        return pad2(hour) + ":" + pad2(minute) + ":" + pad2(second);
+    }
+
+    string toString() {
+        return toDateString() + " " + toTimeString();
+    }
+
+    void DateTime() {
+        fromMs(timeMs());
+    }
+}
