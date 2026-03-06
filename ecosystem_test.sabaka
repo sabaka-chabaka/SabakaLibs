@@ -1,0 +1,1108 @@
+import "base/list.sabaka";
+import "base/map.sabaka";
+import "base/math.sabaka";
+import "base/random.sabaka";
+import "base/string.sabaka";
+
+// ============================================================
+// ECOSYSTEM SIMULATOR
+// ============================================================
+// Симулирует экосистему с растениями, травоядными и хищниками.
+// Каждый тик — один день. Времена года влияют на рост.
+// Животные едят, размножаются, стареют и умирают.
+// Эволюция: каждое поколение немного мутирует характеристики.
+// ============================================================
+
+Random rng = new Random();
+
+// ============================================================
+// UTILS
+// ============================================================
+
+string intToStr(int n) {
+    if (n == 0) { return "0"; }
+    string result = "";
+    bool negative = false;
+    if (n < 0) {
+        negative = true;
+        n = 0 - n;
+    }
+    while (n > 0) {
+        int digit = n - (n / 10) * 10;
+        string d = "0";
+        if (digit == 1) { d = "1"; }
+        if (digit == 2) { d = "2"; }
+        if (digit == 3) { d = "3"; }
+        if (digit == 4) { d = "4"; }
+        if (digit == 5) { d = "5"; }
+        if (digit == 6) { d = "6"; }
+        if (digit == 7) { d = "7"; }
+        if (digit == 8) { d = "8"; }
+        if (digit == 9) { d = "9"; }
+        result = d + result;
+        n = n / 10;
+    }
+    if (negative) { result = "-" + result; }
+    return result;
+}
+
+string floatToStr(float f) {
+    int whole = 0;
+    if (f >= 0) {
+        while (whole + 1 <= f) { whole = whole + 1; }
+    } else {
+        while (whole > f) { whole = whole - 1; }
+    }
+    float frac = f - whole;
+    if (frac < 0) { frac = 0 - frac; }
+    int fracPart = 0;
+    float tmp = frac * 100;
+    while (fracPart + 1 <= tmp) { fracPart = fracPart + 1; }
+    string fracStr = intToStr(fracPart);
+    if (fracPart < 10) { fracStr = "0" + fracStr; }
+    return intToStr(whole) + "." + fracStr;
+}
+
+int clampInt(int v, int lo, int hi) {
+    if (v < lo) { return lo; }
+    if (v > hi) { return hi; }
+    return v;
+}
+
+int absi(int v) {
+    if (v < 0) { return 0 - v; }
+    return v;
+}
+
+void printLine() {
+    print("------------------------------------------------------------");
+}
+
+void printHeader(string title) {
+    printLine();
+    print("  " + title);
+    printLine();
+}
+
+string pad(int n, int width) {
+    string s = intToStr(n);
+    while (s.length < width) {
+        s = " " + s;
+    }
+    return s;
+}
+
+string bar(int value, int maxVal, int width) {
+    string result = "[";
+    int filled = 0;
+    if (maxVal > 0) {
+        filled = (value * width) / maxVal;
+    }
+    int i = 0;
+    while (i < width) {
+        if (i < filled) {
+            result = result + "#";
+        } else {
+            result = result + ".";
+        }
+        i = i + 1;
+    }
+    result = result + "]";
+    return result;
+}
+
+// ============================================================
+// SEASONS
+// ============================================================
+
+class Season {
+    string name = "";
+    float plantGrowthMult = 1;
+    float foodAvailMult = 1;
+    float reproductionMult = 1;
+    float survivalMult = 1;
+    int dayLength = 0;
+
+    void Season() {}
+
+    void initSpring() {
+        name = "Spring";
+        plantGrowthMult = 1.5;
+        foodAvailMult = 1.2;
+        reproductionMult = 1.4;
+        survivalMult = 1.1;
+        dayLength = 92;
+    }
+
+    void initSummer() {
+        name = "Summer";
+        plantGrowthMult = 1.2;
+        foodAvailMult = 1.4;
+        reproductionMult = 1.1;
+        survivalMult = 1.0;
+        dayLength = 92;
+    }
+
+    void initAutumn() {
+        name = "Autumn";
+        plantGrowthMult = 0.7;
+        foodAvailMult = 1.0;
+        reproductionMult = 0.8;
+        survivalMult = 0.9;
+        dayLength = 91;
+    }
+
+    void initWinter() {
+        name = "Winter";
+        plantGrowthMult = 0.1;
+        foodAvailMult = 0.5;
+        reproductionMult = 0.3;
+        survivalMult = 0.7;
+        dayLength = 90;
+    }
+}
+
+// ============================================================
+// GENETICS — each animal has a genome that mutates
+// ============================================================
+
+class Genome {
+    int speed = 5;
+    int strength = 5;
+    int fertility = 5;
+    int lifespan = 50;
+    int hungerRate = 5;
+    int size = 5;
+    int generation = 1;
+
+    void Genome() {}
+
+    void copyFrom(Genome other) {
+        speed = other.speed;
+        strength = other.strength;
+        fertility = other.fertility;
+        lifespan = other.lifespan;
+        hungerRate = other.hungerRate;
+        size = other.size;
+        generation = other.generation;
+    }
+
+    void mutate() {
+        generation = generation + 1;
+        int mutChance = 3;
+
+        if (rng.randomRange(1, 10) <= mutChance) {
+            speed = clampInt(speed + rng.randomRange(-2, 2), 1, 15);
+        }
+        if (rng.randomRange(1, 10) <= mutChance) {
+            strength = clampInt(strength + rng.randomRange(-2, 2), 1, 15);
+        }
+        if (rng.randomRange(1, 10) <= mutChance) {
+            fertility = clampInt(fertility + rng.randomRange(-2, 2), 1, 15);
+        }
+        if (rng.randomRange(1, 10) <= mutChance) {
+            lifespan = clampInt(lifespan + rng.randomRange(-5, 5), 10, 120);
+        }
+        if (rng.randomRange(1, 10) <= mutChance) {
+            hungerRate = clampInt(hungerRate + rng.randomRange(-1, 2), 1, 15);
+        }
+        if (rng.randomRange(1, 10) <= mutChance) {
+            size = clampInt(size + rng.randomRange(-1, 2), 1, 15);
+        }
+    }
+
+    int fitnessScore() {
+        return speed + strength + fertility + lifespan - hungerRate;
+    }
+}
+
+// ============================================================
+// ANIMAL
+// ============================================================
+
+class Animal {
+    string species = "";
+    string type = "";
+    int id = 0;
+    int age = 0;
+    int hunger = 0;
+    int maxHunger = 100;
+    bool isAlive = true;
+    string causeOfDeath = "";
+    int children = 0;
+    int foodEaten = 0;
+    int kills = 0;
+    int x = 0;
+    int y = 0;
+    Genome genome = new Genome();
+
+    void Animal() {}
+
+    void initRabbit(int animalId) {
+        species = "Rabbit";
+        type = "herbivore";
+        id = animalId;
+        age = rng.randomRange(0, 10);
+        hunger = 20;
+        maxHunger = 100;
+        genome.speed = rng.randomRange(5, 9);
+        genome.strength = rng.randomRange(1, 3);
+        genome.fertility = rng.randomRange(6, 10);
+        genome.lifespan = rng.randomRange(30, 50);
+        genome.hungerRate = rng.randomRange(4, 7);
+        genome.size = rng.randomRange(1, 3);
+        x = rng.randomRange(0, 19);
+        y = rng.randomRange(0, 19);
+    }
+
+    void initDeer(int animalId) {
+        species = "Deer";
+        type = "herbivore";
+        id = animalId;
+        age = rng.randomRange(0, 8);
+        hunger = 30;
+        maxHunger = 100;
+        genome.speed = rng.randomRange(6, 10);
+        genome.strength = rng.randomRange(3, 6);
+        genome.fertility = rng.randomRange(3, 6);
+        genome.lifespan = rng.randomRange(50, 80);
+        genome.hungerRate = rng.randomRange(3, 5);
+        genome.size = rng.randomRange(5, 8);
+        x = rng.randomRange(0, 19);
+        y = rng.randomRange(0, 19);
+    }
+
+    void initWolf(int animalId) {
+        species = "Wolf";
+        type = "predator";
+        id = animalId;
+        age = rng.randomRange(0, 5);
+        hunger = 40;
+        maxHunger = 100;
+        genome.speed = rng.randomRange(7, 11);
+        genome.strength = rng.randomRange(7, 11);
+        genome.fertility = rng.randomRange(2, 5);
+        genome.lifespan = rng.randomRange(60, 100);
+        genome.hungerRate = rng.randomRange(5, 9);
+        genome.size = rng.randomRange(6, 9);
+        x = rng.randomRange(0, 19);
+        y = rng.randomRange(0, 19);
+    }
+
+    void initBear(int animalId) {
+        species = "Bear";
+        type = "predator";
+        id = animalId;
+        age = rng.randomRange(0, 4);
+        hunger = 50;
+        maxHunger = 100;
+        genome.speed = rng.randomRange(4, 7);
+        genome.strength = rng.randomRange(9, 13);
+        genome.fertility = rng.randomRange(1, 3);
+        genome.lifespan = rng.randomRange(70, 120);
+        genome.hungerRate = rng.randomRange(7, 11);
+        genome.size = rng.randomRange(9, 14);
+        x = rng.randomRange(0, 19);
+        y = rng.randomRange(0, 19);
+    }
+
+    void initEagle(int animalId) {
+        species = "Eagle";
+        type = "predator";
+        id = animalId;
+        age = rng.randomRange(0, 6);
+        hunger = 30;
+        maxHunger = 100;
+        genome.speed = rng.randomRange(9, 13);
+        genome.strength = rng.randomRange(5, 8);
+        genome.fertility = rng.randomRange(1, 3);
+        genome.lifespan = rng.randomRange(80, 120);
+        genome.hungerRate = rng.randomRange(4, 7);
+        genome.size = rng.randomRange(3, 6);
+        x = rng.randomRange(0, 19);
+        y = rng.randomRange(0, 19);
+    }
+
+    bool canReproduce(float seasonReproMult) {
+        if (!isAlive) { return false; }
+        if (age < 5) { return false; }
+        if (hunger > 80) { return false; }
+        int chance = genome.fertility;
+        float mult = seasonReproMult;
+        int threshold = 0;
+        float tmp = mult * 10;
+        while (threshold + 1 <= tmp) { threshold = threshold + 1; }
+        int roll = rng.randomRange(1, 100);
+        if (roll <= chance + threshold) { return true; }
+        return false;
+    }
+
+    int distanceTo(Animal other) {
+        int dx = x - other.x;
+        int dy = y - other.y;
+        if (dx < 0) { dx = 0 - dx; }
+        if (dy < 0) { dy = 0 - dy; }
+        return dx + dy;
+    }
+
+    void moveToward(Animal target) {
+        int steps = genome.speed / 2;
+        if (steps < 1) { steps = 1; }
+        int i = 0;
+        while (i < steps) {
+            if (x < target.x) { x = x + 1; }
+            else if (x > target.x) { x = x - 1; }
+            if (y < target.y) { y = y + 1; }
+            else if (y > target.y) { y = y - 1; }
+            x = clampInt(x, 0, 19);
+            y = clampInt(y, 0, 19);
+            i = i + 1;
+        }
+    }
+
+    void moveRandom() {
+        int steps = genome.speed / 3;
+        if (steps < 1) { steps = 1; }
+        int i = 0;
+        while (i < steps) {
+            int dir = rng.randomRange(1, 4);
+            if (dir == 1) { x = x + 1; }
+            if (dir == 2) { x = x - 1; }
+            if (dir == 3) { y = y + 1; }
+            if (dir == 4) { y = y - 1; }
+            x = clampInt(x, 0, 19);
+            y = clampInt(y, 0, 19);
+            i = i + 1;
+        }
+    }
+
+    bool tryHunt(Animal prey) {
+        if (!prey.isAlive) { return false; }
+        int attackPower = genome.strength + genome.speed / 2;
+        int defPower = prey.genome.speed * 2 + prey.genome.strength;
+        int roll = rng.randomRange(1, 20);
+        if (roll + attackPower > defPower + 12) {
+            return true;
+        }
+        return false;
+    }
+
+    void die(string cause) {
+        isAlive = false;
+        causeOfDeath = cause;
+    }
+}
+
+// ============================================================
+// PLANT GRID — 20x20 food tiles
+// ============================================================
+
+class PlantGrid {
+    List<int> grid = new List<int>();
+    int width = 20;
+    int height = 20;
+    int totalFood = 0;
+
+    void PlantGrid() {}
+
+    void recalcTotal() {
+        totalFood = 0;
+        int i = 0;
+        while (i < width * height) {
+            totalFood = totalFood + grid.values[i];
+            i = i + 1;
+        }
+    }
+
+    void init() {
+        int i = 0;
+        while (i < width * height) {
+            grid.push_back(rng.randomRange(5, 20));
+            i = i + 1;
+        }
+        recalcTotal();
+    }
+
+    int getFood(int x, int y) {
+        int idx = y * width + x;
+        return grid.values[idx];
+    }
+
+    void grow(float growMult) {
+        int i = 0;
+        while (i < width * height) {
+            float growChance = growMult * 3;
+            int threshold = 0;
+            while (threshold + 1 <= growChance) { threshold = threshold + 1; }
+            int roll = rng.randomRange(1, 10);
+            if (roll <= threshold) {
+                grid.values[i] = clampInt(grid.values[i] + rng.randomRange(1, 3), 0, 30);
+            }
+            i = i + 1;
+        }
+        recalcTotal();
+    }
+
+    int consume(int x, int y, int amount) {
+        int idx = y * width + x;
+        int available = grid.values[idx];
+        int eaten = amount;
+        if (available < eaten) { eaten = available; }
+        grid.values[idx] = grid.values[idx] - eaten;
+        totalFood = totalFood - eaten;
+        return eaten;
+    }
+
+    void wither(bool isWinter) {
+        if (isWinter) {
+            int i = 0;
+            while (i < width * height) {
+                if (rng.randomRange(1, 10) <= 3) {
+                    grid.values[i] = clampInt(grid.values[i] - 1, 0, 30);
+                }
+                i = i + 1;
+            }
+            recalcTotal();
+        }
+    }
+}
+
+// ============================================================
+// POPULATION STATS TRACKER
+// ============================================================
+
+class PopStats {
+    List<int> rabbitCounts = new List<int>();
+    List<int> deerCounts = new List<int>();
+    List<int> wolfCounts = new List<int>();
+    List<int> bearCounts = new List<int>();
+    List<int> eagleCounts = new List<int>();
+    List<int> plantFood = new List<int>();
+    List<int> days = new List<int>();
+
+    int totalRabbitsEver = 0;
+    int totalDeerEver = 0;
+    int totalWolvesEver = 0;
+    int totalBearsEver = 0;
+    int totalEaglesEver = 0;
+    int totalDeaths = 0;
+    int deathsByHunger = 0;
+    int deathsByPredation = 0;
+    int deathsByAge = 0;
+
+    void PopStats() {}
+
+    void record(int day, int rabbits, int deer, int wolves, int bears, int eagles, int food) {
+        days.push_back(day);
+        rabbitCounts.push_back(rabbits);
+        deerCounts.push_back(deer);
+        wolfCounts.push_back(wolves);
+        bearCounts.push_back(bears);
+        eagleCounts.push_back(eagles);
+        plantFood.push_back(food);
+    }
+
+    void recordDeath(string cause) {
+        totalDeaths = totalDeaths + 1;
+        if (cause == "hunger") { deathsByHunger = deathsByHunger + 1; }
+        if (cause == "predation") { deathsByPredation = deathsByPredation + 1; }
+        if (cause == "age") { deathsByAge = deathsByAge + 1; }
+    }
+}
+
+// ============================================================
+// EVOLUTION TRACKER
+// ============================================================
+
+class EvolutionTracker {
+    int avgRabbitSpeed = 0;
+    int avgRabbitFertility = 0;
+    int avgWolfStrength = 0;
+    int avgWolfSpeed = 0;
+    int avgDeerSpeed = 0;
+    int topGeneration = 1;
+    int totalMutations = 0;
+
+    void EvolutionTracker() {}
+
+    void update(List<Animal> animals) {
+        int rabbitCount = 0;
+        int rabbitSpeedSum = 0;
+        int rabbitFertSum = 0;
+        int wolfCount = 0;
+        int wolfStrSum = 0;
+        int wolfSpeedSum = 0;
+        int deerCount = 0;
+        int deerSpeedSum = 0;
+
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal a = animals.values[i];
+            if (a.isAlive) {
+                if (a.genome.generation > topGeneration) {
+                    topGeneration = a.genome.generation;
+                }
+                if (a.species == "Rabbit") {
+                    rabbitCount = rabbitCount + 1;
+                    rabbitSpeedSum = rabbitSpeedSum + a.genome.speed;
+                    rabbitFertSum = rabbitFertSum + a.genome.fertility;
+                }
+                if (a.species == "Wolf") {
+                    wolfCount = wolfCount + 1;
+                    wolfStrSum = wolfStrSum + a.genome.strength;
+                    wolfSpeedSum = wolfSpeedSum + a.genome.speed;
+                }
+                if (a.species == "Deer") {
+                    deerCount = deerCount + 1;
+                    deerSpeedSum = deerSpeedSum + a.genome.speed;
+                }
+            }
+            i = i + 1;
+        }
+
+        if (rabbitCount > 0) {
+            avgRabbitSpeed = rabbitSpeedSum / rabbitCount;
+            avgRabbitFertility = rabbitFertSum / rabbitCount;
+        }
+        if (wolfCount > 0) {
+            avgWolfStrength = wolfStrSum / wolfCount;
+            avgWolfSpeed = wolfSpeedSum / wolfCount;
+        }
+        if (deerCount > 0) {
+            avgDeerSpeed = deerSpeedSum / deerCount;
+        }
+    }
+}
+
+// ============================================================
+// ECOSYSTEM ENGINE
+// ============================================================
+
+class Ecosystem {
+    List<Animal> animals = new List<Animal>();
+    PlantGrid plants = new PlantGrid();
+    PopStats stats = new PopStats();
+    EvolutionTracker evolution = new EvolutionTracker();
+    int nextId = 1;
+    int day = 0;
+    int year = 1;
+    int seasonDay = 0;
+    int currentSeason = 0;
+
+
+    void Ecosystem() {}
+
+    void init() {
+        plants.init();
+        int i = 0;
+        while (i < 20) {
+            Animal r = new Animal();
+            r.initRabbit(nextId);
+            nextId = nextId + 1;
+            animals.push_back(r);
+            stats.totalRabbitsEver = stats.totalRabbitsEver + 1;
+            i = i + 1;
+        }
+        i = 0;
+        while (i < 12) {
+            Animal d = new Animal();
+            d.initDeer(nextId);
+            nextId = nextId + 1;
+            animals.push_back(d);
+            stats.totalDeerEver = stats.totalDeerEver + 1;
+            i = i + 1;
+        }
+        i = 0;
+        while (i < 6) {
+            Animal w = new Animal();
+            w.initWolf(nextId);
+            nextId = nextId + 1;
+            animals.push_back(w);
+            stats.totalWolvesEver = stats.totalWolvesEver + 1;
+            i = i + 1;
+        }
+        i = 0;
+        while (i < 3) {
+            Animal b = new Animal();
+            b.initBear(nextId);
+            nextId = nextId + 1;
+            animals.push_back(b);
+            stats.totalBearsEver = stats.totalBearsEver + 1;
+            i = i + 1;
+        }
+        i = 0;
+        while (i < 4) {
+            Animal e = new Animal();
+            e.initEagle(nextId);
+            nextId = nextId + 1;
+            animals.push_back(e);
+            stats.totalEaglesEver = stats.totalEaglesEver + 1;
+            i = i + 1;
+        }
+    }
+
+    string getSeasonName() {
+        if (currentSeason == 0) { return "Spring"; }
+        if (currentSeason == 1) { return "Summer"; }
+        if (currentSeason == 2) { return "Autumn"; }
+        return "Winter";
+    }
+
+    float getSeasonPlantGrowth() {
+        if (currentSeason == 0) { return 1.5; }
+        if (currentSeason == 1) { return 1.2; }
+        if (currentSeason == 2) { return 0.7; }
+        return 0.1;
+    }
+
+    float getSeasonReproduction() {
+        if (currentSeason == 0) { return 1.4; }
+        if (currentSeason == 1) { return 1.1; }
+        if (currentSeason == 2) { return 0.8; }
+        return 0.3;
+    }
+
+    float getSeasonHunger() {
+        if (currentSeason == 0) { return 1.0; }
+        if (currentSeason == 1) { return 1.1; }
+        if (currentSeason == 2) { return 1.0; }
+        return 1.4;
+    }
+
+    int getSeasonDayLength() {
+        if (currentSeason == 0) { return 92; }
+        if (currentSeason == 1) { return 92; }
+        if (currentSeason == 2) { return 91; }
+        return 90;
+    }
+
+    void advanceSeason() {
+        seasonDay = seasonDay + 1;
+        int sLen = getSeasonDayLength();
+        if (seasonDay >= sLen) {
+            seasonDay = 0;
+            currentSeason = currentSeason + 1;
+            if (currentSeason >= 4) {
+                currentSeason = 0;
+                year = year + 1;
+            }
+        }
+    }
+
+    int countAlive(string species) {
+        int count = 0;
+        int i = 0;
+        while (i < animals.values.length) {
+            if (animals.values[i].isAlive && animals.values[i].species == species) {
+                count = count + 1;
+            }
+            i = i + 1;
+        }
+        return count;
+    }
+
+    void feedHerbivores() {
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal a = animals.values[i];
+            if (a.isAlive && a.type == "herbivore") {
+                int needed = a.genome.hungerRate;
+                int eaten = plants.consume(a.x, a.y, needed);
+                a.hunger = a.hunger - eaten * 12;
+                a.foodEaten = a.foodEaten + eaten;
+                if (a.hunger < 0) { a.hunger = 0; }
+            }
+            i = i + 1;
+        }
+    }
+
+    void feedPredators() {
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal pred = animals.values[i];
+            if (!pred.isAlive || pred.type != "predator") {
+                i = i + 1;
+            } else {
+                int bestPreyIdx = -1;
+                int bestDist = 999;
+                int j = rng.randomRange(0, animals.values.length - 1);
+                int searched = 0;
+                while (searched < 20 && bestPreyIdx == -1) {
+                    if (j >= animals.values.length) { j = 0; }
+                    Animal prey = animals.values[j];
+                    if (prey.isAlive && prey.type == "herbivore") {
+                        int dist = pred.distanceTo(prey);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestPreyIdx = j;
+                        }
+                    }
+                    j = j + 1;
+                    searched = searched + 1;
+                }
+
+                bool foundPrey = false;
+                if (bestPreyIdx != -1) { foundPrey = true; }
+
+                if (foundPrey) {
+                    Animal bestPrey = animals.values[bestPreyIdx];
+                    pred.moveToward(bestPrey);
+                    int dist = pred.distanceTo(bestPrey);
+                    if (dist <= 2) {
+                        bool success = pred.tryHunt(bestPrey);
+                        if (success) {
+                            bestPrey.die("predation");
+                            stats.recordDeath("predation");
+                            pred.hunger = pred.hunger - 35;
+                            pred.kills = pred.kills + 1;
+                            pred.foodEaten = pred.foodEaten + 50;
+                            if (pred.hunger < 0) { pred.hunger = 0; }
+                        }
+                    }
+                } else {
+                    pred.moveRandom();
+                }
+                i = i + 1;
+            }
+        }
+    }
+
+    void increaseHunger() {
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal a = animals.values[i];
+            if (a.isAlive) {
+                float mult = 1;
+                string sName = getSeasonName();
+                if (sName == "Winter") { mult = 1.4; }
+                if (sName == "Summer") { mult = 1.1; }
+                int increase = a.genome.hungerRate;
+                float tmp = increase * mult;
+                int actualInc = 0;
+                while (actualInc + 1 <= tmp) { actualInc = actualInc + 1; }
+                a.hunger = a.hunger + actualInc;
+                if (a.hunger > a.maxHunger) {
+                    a.die("hunger");
+                    stats.recordDeath("hunger");
+                }
+            }
+            i = i + 1;
+        }
+    }
+
+    void ageAnimals() {
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal a = animals.values[i];
+            if (a.isAlive) {
+                a.age = a.age + 1;
+                if (a.age >= a.genome.lifespan) {
+                    a.die("age");
+                    stats.recordDeath("age");
+                }
+            }
+            i = i + 1;
+        }
+    }
+
+    void reproduce() {
+        List<Animal> newborns = new List<Animal>();
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal a = animals.values[i];
+            if (a.isAlive && a.canReproduce(getSeasonReproduction())) {
+                Animal baby = new Animal();
+                if (a.species == "Rabbit" && countAlive("Rabbit") < 60) {
+                    baby.initRabbit(nextId);
+                    nextId = nextId + 1;
+                    baby.genome.copyFrom(a.genome);
+                    baby.genome.mutate();
+                    baby.x = a.x;
+                    baby.y = a.y;
+                    baby.age = 0;
+                    baby.hunger = 10;
+                    newborns.push_back(baby);
+                    a.children = a.children + 1;
+                    stats.totalRabbitsEver = stats.totalRabbitsEver + 1;
+                    evolution.totalMutations = evolution.totalMutations + 1;
+                }
+                if (a.species == "Deer" && countAlive("Deer") < 50) {
+                    baby.initDeer(nextId);
+                    nextId = nextId + 1;
+                    baby.genome.copyFrom(a.genome);
+                    baby.genome.mutate();
+                    baby.x = a.x;
+                    baby.y = a.y;
+                    baby.age = 0;
+                    baby.hunger = 10;
+                    newborns.push_back(baby);
+                    a.children = a.children + 1;
+                    stats.totalDeerEver = stats.totalDeerEver + 1;
+                    evolution.totalMutations = evolution.totalMutations + 1;
+                }
+                if (a.species == "Wolf" && countAlive("Wolf") < 12) {
+                    baby.initWolf(nextId);
+                    nextId = nextId + 1;
+                    baby.genome.copyFrom(a.genome);
+                    baby.genome.mutate();
+                    baby.x = a.x;
+                    baby.y = a.y;
+                    baby.age = 0;
+                    baby.hunger = 20;
+                    newborns.push_back(baby);
+                    a.children = a.children + 1;
+                    stats.totalWolvesEver = stats.totalWolvesEver + 1;
+                    evolution.totalMutations = evolution.totalMutations + 1;
+                }
+                if (a.species == "Bear" && countAlive("Bear") < 6) {
+                    baby.initBear(nextId);
+                    nextId = nextId + 1;
+                    baby.genome.copyFrom(a.genome);
+                    baby.genome.mutate();
+                    baby.x = a.x;
+                    baby.y = a.y;
+                    baby.age = 0;
+                    baby.hunger = 20;
+                    newborns.push_back(baby);
+                    a.children = a.children + 1;
+                    stats.totalBearsEver = stats.totalBearsEver + 1;
+                    evolution.totalMutations = evolution.totalMutations + 1;
+                }
+                if (a.species == "Eagle" && countAlive("Eagle") < 8) {
+                    baby.initEagle(nextId);
+                    nextId = nextId + 1;
+                    baby.genome.copyFrom(a.genome);
+                    baby.genome.mutate();
+                    baby.x = a.x;
+                    baby.y = a.y;
+                    baby.age = 0;
+                    baby.hunger = 15;
+                    newborns.push_back(baby);
+                    a.children = a.children + 1;
+                    stats.totalEaglesEver = stats.totalEaglesEver + 1;
+                    evolution.totalMutations = evolution.totalMutations + 1;
+                }
+            }
+            i = i + 1;
+        }
+
+        int j = 0;
+        while (j < newborns.values.length) {
+            animals.push_back(newborns.values[j]);
+            j = j + 1;
+        }
+    }
+
+    void purgeDeadAnimals() {
+        List<Animal> living = new List<Animal>();
+        int i = 0;
+        while (i < animals.values.length) {
+            if (animals.values[i].isAlive) {
+                living.push_back(animals.values[i]);
+            }
+            i = i + 1;
+        }
+        animals = living;
+    }
+
+    void tick() {
+        day = day + 1;
+
+        plants.grow(getSeasonPlantGrowth());
+        plants.wither(getSeasonName() == "Winter");
+        feedHerbivores();
+        feedPredators();
+        increaseHunger();
+        ageAnimals();
+        reproduce();
+        purgeDeadAnimals();
+        advanceSeason();
+
+        if (day - (day / 10) * 10 == 0) {
+            evolution.update(animals);
+        }
+
+        int rabbits = countAlive("Rabbit");
+        int deer = countAlive("Deer");
+        int wolves = countAlive("Wolf");
+        int bears = countAlive("Bear");
+        int eagles = countAlive("Eagle");
+        stats.record(day, rabbits, deer, wolves, bears, eagles, plants.totalFood);
+    }
+
+    bool isExtinct() {
+        int herbivores = countAlive("Rabbit") + countAlive("Deer");
+        int predators = countAlive("Wolf") + countAlive("Bear") + countAlive("Eagle");
+        if (herbivores == 0 && predators == 0) { return true; }
+        return false;
+    }
+
+    void printStatus() {
+        print("  Day: " + intToStr(day) + "  Year: " + intToStr(year) + "  Season: " + getSeasonName());
+        printLine();
+
+        int rabbits = countAlive("Rabbit");
+        int deer = countAlive("Deer");
+        int wolves = countAlive("Wolf");
+        int bears = countAlive("Bear");
+        int eagles = countAlive("Eagle");
+
+        print("  HERBIVORES:");
+        print("    Rabbit: " + pad(rabbits, 4) + "  " + bar(rabbits, 80, 20));
+        print("    Deer:   " + pad(deer, 4) + "  " + bar(deer, 50, 20));
+        print("");
+        print("  PREDATORS:");
+        print("    Wolf:   " + pad(wolves, 4) + "  " + bar(wolves, 20, 20));
+        print("    Bear:   " + pad(bears, 4) + "  " + bar(bears, 10, 20));
+        print("    Eagle:  " + pad(eagles, 4) + "  " + bar(eagles, 15, 20));
+        print("");
+        print("  ENVIRONMENT:");
+        print("    Plant Food: " + pad(plants.totalFood, 6) + "  " + bar(plants.totalFood, 5000, 20));
+        print("");
+        print("  EVOLUTION (avg genome):");
+        print("    Rabbit speed: " + intToStr(evolution.avgRabbitSpeed) + "  fertility: " + intToStr(evolution.avgRabbitFertility));
+        print("    Wolf strength: " + intToStr(evolution.avgWolfStrength) + "  speed: " + intToStr(evolution.avgWolfSpeed));
+        print("    Deer speed: " + intToStr(evolution.avgDeerSpeed));
+        print("    Top generation: " + intToStr(evolution.topGeneration));
+        print("    Total mutations: " + intToStr(evolution.totalMutations));
+        printLine();
+    }
+
+    void printFinalReport() {
+        printHeader("ECOSYSTEM FINAL REPORT — Day " + intToStr(day));
+        print("  SIMULATION DURATION:");
+        print("    Days simulated: " + intToStr(day));
+        print("    Years elapsed:  " + intToStr(year));
+        print("");
+        print("  POPULATION TOTALS (ever born):");
+        print("    Rabbits: " + intToStr(stats.totalRabbitsEver));
+        print("    Deer:    " + intToStr(stats.totalDeerEver));
+        print("    Wolves:  " + intToStr(stats.totalWolvesEver));
+        print("    Bears:   " + intToStr(stats.totalBearsEver));
+        print("    Eagles:  " + intToStr(stats.totalEaglesEver));
+        print("");
+        print("  SURVIVING POPULATIONS:");
+        print("    Rabbits: " + intToStr(countAlive("Rabbit")));
+        print("    Deer:    " + intToStr(countAlive("Deer")));
+        print("    Wolves:  " + intToStr(countAlive("Wolf")));
+        print("    Bears:   " + intToStr(countAlive("Bear")));
+        print("    Eagles:  " + intToStr(countAlive("Eagle")));
+        print("");
+        print("  DEATHS:");
+        print("    Total:        " + intToStr(stats.totalDeaths));
+        print("    By hunger:    " + intToStr(stats.deathsByHunger));
+        print("    By predation: " + intToStr(stats.deathsByPredation));
+        print("    By old age:   " + intToStr(stats.deathsByAge));
+        print("");
+        print("  EVOLUTION:");
+        print("    Top generation reached: " + intToStr(evolution.topGeneration));
+        print("    Total mutations:        " + intToStr(evolution.totalMutations));
+        print("    Avg rabbit speed:       " + intToStr(evolution.avgRabbitSpeed));
+        print("    Avg rabbit fertility:   " + intToStr(evolution.avgRabbitFertility));
+        print("    Avg wolf strength:      " + intToStr(evolution.avgWolfStrength));
+        print("    Avg deer speed:         " + intToStr(evolution.avgDeerSpeed));
+        print("");
+        print("  NOTABLE INDIVIDUALS:");
+        int mostKills = 0;
+        string topKiller = "none";
+        int mostChildren = 0;
+        string mostFertile = "none";
+        int oldestAge = 0;
+        string oldestName = "none";
+        int i = 0;
+        while (i < animals.values.length) {
+            Animal a = animals.values[i];
+            if (a.kills > mostKills) {
+                mostKills = a.kills;
+                topKiller = a.species + " #" + intToStr(a.id);
+            }
+            if (a.children > mostChildren) {
+                mostChildren = a.children;
+                mostFertile = a.species + " #" + intToStr(a.id);
+            }
+            if (a.age > oldestAge) {
+                oldestAge = a.age;
+                oldestName = a.species + " #" + intToStr(a.id);
+            }
+            i = i + 1;
+        }
+        print("    Most kills:    " + topKiller + " (" + intToStr(mostKills) + " kills)");
+        print("    Most children: " + mostFertile + " (" + intToStr(mostChildren) + " offspring)");
+        print("    Oldest alive:  " + oldestName + " (age " + intToStr(oldestAge) + ")");
+        printLine();
+    }
+
+    void printPopulationGraph() {
+        printHeader("POPULATION HISTORY GRAPH (every 10 days)");
+        print("  R=Rabbit  D=Deer  W=Wolf  B=Bear  E=Eagle");
+        printLine();
+
+        int step = 10;
+        int i = 0;
+        while (i < stats.days.values.length) {
+            int d = stats.days.values[i];
+            if ((d - (d / step) * step) == 0) {
+                int r = stats.rabbitCounts.values[i];
+                int de = stats.deerCounts.values[i];
+                int w = stats.wolfCounts.values[i];
+                int b = stats.bearCounts.values[i];
+                int e = stats.eagleCounts.values[i];
+                print("  Day " + pad(d, 4) + " | R:" + pad(r, 3) + " D:" + pad(de, 3) + " W:" + pad(w, 2) + " B:" + pad(b, 2) + " E:" + pad(e, 2));
+            }
+            i = i + 1;
+        }
+    }
+}
+
+// ============================================================
+// MAIN
+// ============================================================
+
+printHeader("ECOSYSTEM SIMULATOR v1.0");
+print("  A dynamic simulation of predator-prey relationships,");
+print("  seasonal cycles, and genetic evolution.");
+printLine();
+
+print("  How many days to simulate? (suggested: 100-500)");
+string daysInput = input();
+int totalDays = 200;
+if (daysInput == "100") { totalDays = 100; }
+if (daysInput == "200") { totalDays = 200; }
+if (daysInput == "300") { totalDays = 300; }
+if (daysInput == "400") { totalDays = 400; }
+if (daysInput == "500") { totalDays = 500; }
+
+print("  Show status every N days? (10/25/50)");
+string intervalInput = input();
+int reportInterval = 25;
+if (intervalInput == "10") { reportInterval = 10; }
+if (intervalInput == "25") { reportInterval = 25; }
+if (intervalInput == "50") { reportInterval = 50; }
+
+Ecosystem eco = new Ecosystem();
+eco.init();
+
+printHeader("INITIAL STATE");
+eco.printStatus();
+
+print("  Starting simulation...");
+printLine();
+
+bool running = true;
+while (eco.day < totalDays && running) {
+    eco.tick();
+
+    int rem = eco.day - (eco.day / reportInterval) * reportInterval;
+    if (rem == 0) {
+        printHeader("STATUS — Day " + intToStr(eco.day));
+        eco.printStatus();
+    }
+
+    if (eco.isExtinct()) {
+        print("  All species have gone extinct on day " + intToStr(eco.day) + ".");
+        running = false;
+    }
+}
+
+eco.printPopulationGraph();
+eco.printFinalReport();

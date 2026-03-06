@@ -1,0 +1,70 @@
+string B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+int b64IndexOf(string c) {
+    int i = 0;
+    while (i < 64) {
+        if (B64_CHARS[i] == c) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+string base64Encode(string input) {
+    string result = "";
+    int i = 0;
+    while (i < input.length) {
+        int b0 = ord(input[i]);
+        int b1 = 0;
+        int b2 = 0;
+        int remaining = input.length - i;
+        if (remaining >= 2) { b1 = ord(input[i + 1]); }
+        if (remaining >= 3) { b2 = ord(input[i + 2]); }
+
+        int idx0 = b0 / 4;
+        int idx1 = (b0 - idx0 * 4) * 16 + b1 / 16;
+        int idx2 = (b1 - (b1 / 16) * 16) * 4 + b2 / 64;
+        int idx3 = b2 - (b2 / 64) * 64;
+
+        result = result + B64_CHARS[idx0];
+        result = result + B64_CHARS[idx1];
+        if (remaining >= 2) {
+            result = result + B64_CHARS[idx2];
+        } else {
+            result = result + "=";
+        }
+        if (remaining >= 3) {
+            result = result + B64_CHARS[idx3];
+        } else {
+            result = result + "=";
+        }
+
+        i = i + 3;
+    }
+    return result;
+}
+
+string base64Decode(string input) {
+    string result = "";
+    int i = 0;
+    while (i < input.length) {
+        int c0 = b64IndexOf(input[i]);
+        int c1 = b64IndexOf(input[i + 1]);
+        int c2 = 0;
+        int c3 = 0;
+        bool has2 = false;
+        bool has3 = false;
+        if (input[i + 2] != "=") { c2 = b64IndexOf(input[i + 2]); has2 = true; }
+        if (input[i + 3] != "=") { c3 = b64IndexOf(input[i + 3]); has3 = true; }
+
+        int b0 = c0 * 4 + c1 / 16;
+        int b1 = (c1 - (c1 / 16) * 16) * 16 + c2 / 4;
+        int b2 = (c2 - (c2 / 4) * 4) * 64 + c3;
+
+        result = result + chr(b0);
+        if (has2) { result = result + chr(b1); }
+        if (has3) { result = result + chr(b2); }
+
+        i = i + 4;
+    }
+    return result;
+}

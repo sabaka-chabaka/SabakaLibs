@@ -1,0 +1,35 @@
+string HEX_CHARS = "0123456789abcdef";
+
+string hexByte(Random rng) {
+    int n = rng.randomRange(0, 255);
+    int hi = n / 16;
+    int lo = n - hi * 16;
+    return HEX_CHARS[hi] + HEX_CHARS[lo];
+}
+
+string hexNibble(int n) {
+    return HEX_CHARS[n];
+}
+
+string uuidV4(Random rng) {
+    // xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    string a = hexByte(rng) + hexByte(rng) + hexByte(rng) + hexByte(rng);
+
+    string b = hexByte(rng) + hexByte(rng);
+
+    // version 4: third group starts with 4
+    int c1 = rng.randomRange(0, 255);
+    int c1hi = c1 / 16;
+    int c1lo = c1 - c1hi * 16;
+    string c = "4" + HEX_CHARS[c1lo] + hexByte(rng);
+
+    // variant bits: fourth group starts with 8, 9, a, or b
+    int variant = rng.randomRange(8, 11);
+    int d1 = rng.randomRange(0, 255);
+    int d1lo = d1 - (d1 / 16) * 16;
+    string d = HEX_CHARS[variant] + HEX_CHARS[d1lo] + hexByte(rng) + hexByte(rng);
+
+    string e = hexByte(rng) + hexByte(rng) + hexByte(rng) + hexByte(rng) + hexByte(rng) + hexByte(rng);
+
+    return a + "-" + b + "-" + c + "-" + d + "-" + e;
+}

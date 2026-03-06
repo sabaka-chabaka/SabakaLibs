@@ -1,0 +1,139 @@
+import "math.sabaka"
+
+float TRIG_PI = 3.14159265;
+float TRIG_TWO_PI = 6.28318530;
+float TRIG_HALF_PI = 1.57079632;
+float TRIG_DEG2RAD = 0.01745329;
+float TRIG_RAD2DEG = 57.2957795;
+
+float normAngle(float x) {
+    while (x > TRIG_PI) { x = x - TRIG_TWO_PI; }
+    while (x < 0 - TRIG_PI) { x = x + TRIG_TWO_PI; }
+    return x;
+}
+
+float sinf(float x) {
+    x = normAngle(x);
+    float x2 = x * x;
+    float x3 = x2 * x;
+    float x5 = x3 * x2;
+    float x7 = x5 * x2;
+    float x9 = x7 * x2;
+    return x - x3 / 6 + x5 / 120 - x7 / 5040 + x9 / 362880;
+}
+
+float cosf(float x) {
+    x = normAngle(x);
+    float x2 = x * x;
+    float x4 = x2 * x2;
+    float x6 = x4 * x2;
+    float x8 = x6 * x2;
+    return 1 - x2 / 2 + x4 / 24 - x6 / 720 + x8 / 40320;
+}
+
+float tanf(float x) {
+    float c = cosf(x);
+    if (c < 0.0001 && c > -0.0001) { return 999999; }
+    return sinf(x) / c;
+}
+
+
+
+float sqrtf(float x) {
+    if (x <= 0) { return 0; }
+    float g = x / 2.0;
+    int i = 0;
+    while (i < 40) { g = (g + x / g) / 2; i = i + 1; }
+    return g;
+}
+
+float atanf(float x) {
+    bool flip = false;
+    bool negate = false;
+    if (x < 0) { x = 0 - x; negate = true; }
+    if (x > 1) { x = 1 / x; flip = true; }
+    float x2 = x * x;
+    float x3 = x2 * x;
+    float x5 = x3 * x2;
+    float x7 = x5 * x2;
+    float x9 = x7 * x2;
+    float result = x - x3 / 3 + x5 / 5 - x7 / 7 + x9 / 9;
+    if (flip) { result = TRIG_HALF_PI - result; }
+    if (negate) { result = 0 - result; }
+    return result;
+}
+
+float asinf(float x) {
+    if (x > 1) { x = 1; }
+    if (x < -1) { x = -1; }
+    // asin(x) = atan(x / sqrt(1 - x*x))
+    float under = 1 - x * x;
+    float sq = sqrtf(under);
+    return atanf(x / sq);
+}
+float acosf(float x) {
+    return TRIG_HALF_PI - asinf(x);
+}
+
+
+float atan2f(float y, float x) {
+    if (x > 0) { return atanf(y / x); }
+    if (x < 0 && y >= 0) { return atanf(y / x) + TRIG_PI; }
+    if (x < 0 && y < 0) { return atanf(y / x) - TRIG_PI; }
+    if (x == 0 && y > 0) { return TRIG_HALF_PI; }
+    if (x == 0 && y < 0) { return 0 - TRIG_HALF_PI; }
+    return 0;
+}
+
+
+float degToRad(float deg) {
+    return deg * TRIG_DEG2RAD;
+}
+
+float radToDeg(float rad) {
+    return rad * TRIG_RAD2DEG;
+}
+
+float sinDeg(float deg) {
+    return sinf(degToRad(deg));
+}
+
+float cosDeg(float deg) {
+    return cosf(degToRad(deg));
+}
+
+float tanDeg(float deg) {
+    return tanf(degToRad(deg));
+}
+
+// Hyperbolic functions
+// sinh(x) = (e^x - e^-x) / 2
+float expApprox(float x) {
+    bool neg = false;
+    if (x < 0) { neg = true; x = 0 - x; }
+    float result = 1;
+    float term = 1;
+    int i = 1;
+    while (i <= 15) {
+        float fi = i;
+        term = term * x / fi;
+        result = result + term;
+        i = i + 1;
+    }
+    if (neg) { result = 1 / result; }
+    return result;
+}
+
+float sinhf(float x) {
+    return (expApprox(x) - expApprox(0 - x)) / 2;
+}
+
+float coshf(float x) {
+    return (expApprox(x) + expApprox(0 - x)) / 2;
+}
+
+float tanhf(float x) {
+    float ch = coshf(x);
+    if (ch == 0) { return 0; }
+    return sinhf(x) / ch;
+}

@@ -1,0 +1,280 @@
+// vec2.sabaka
+// 2D vector math
+// Requires: base/math.sabaka
+
+class Vec2 {
+    float x = 0;
+    float y = 0;
+
+    void Vec2() {}
+
+    void setf(float px, float py) {
+        x = px;
+        y = py;
+    }
+
+    void set(int px, int py) {
+        float fx = px;
+        float fy = py;
+        x = fx;
+        y = fy;
+    }
+
+    void copyFrom(Vec2 other) {
+        x = other.x;
+        y = other.y;
+    }
+
+    float sqrtApprox(float v) {
+        if (v <= 0) { return 0; }
+        float g = v / 2.0;
+        int i = 0;
+        while (i < 30) { g = (g + v / g) / 2; i = i + 1; }
+        return g;
+    }
+
+    float absf(float v) {
+        if (v < 0) { return 0 - v; }
+        return v;
+    }
+
+    float length() {
+        return sqrtApprox(x * x + y * y);
+    }
+
+    float lengthSq() {
+        return x * x + y * y;
+    }
+
+    void add(Vec2 other) {
+        x = x + other.x;
+        y = y + other.y;
+    }
+
+    void sub(Vec2 other) {
+        x = x - other.x;
+        y = y - other.y;
+    }
+
+    void scale(float s) {
+        x = x * s;
+        y = y * s;
+    }
+
+    void negate() {
+        x = 0 - x;
+        y = 0 - y;
+    }
+
+    void normalize() {
+        float len = length();
+        if (len > 0) {
+            x = x / len;
+            y = y / len;
+        }
+    }
+
+    float dot(Vec2 other) {
+        return x * other.x + y * other.y;
+    }
+
+    float cross(Vec2 other) {
+        return x * other.y - y * other.x;
+    }
+
+    float distanceTo(Vec2 other) {
+        float dx = x - other.x;
+        float dy = y - other.y;
+        return sqrtApprox(dx * dx + dy * dy);
+    }
+
+    float distanceSqTo(Vec2 other) {
+        float dx = x - other.x;
+        float dy = y - other.y;
+        return dx * dx + dy * dy;
+    }
+
+    void lerp(Vec2 other, float t) {
+        x = x + (other.x - x) * t;
+        y = y + (other.y - y) * t;
+    }
+
+    void clampLength(float maxLen) {
+        float len = length();
+        if (len > maxLen && len > 0) {
+            x = x / len * maxLen;
+            y = y / len * maxLen;
+        }
+    }
+
+    void perpCW() {
+        float tmp = x;
+        x = y;
+        y = 0 - tmp;
+    }
+
+    void perpCCW() {
+        float tmp = x;
+        x = 0 - y;
+        y = tmp;
+    }
+
+    float sinApprox(float v) {
+        float pi = 3.1415927;
+        float twopi = 6.2831853;
+        while (v > pi) { v = v - twopi; }
+        while (v < 0 - pi) { v = v + twopi; }
+        float v2 = v * v;
+        float v3 = v2 * v;
+        float v5 = v3 * v2;
+        float v7 = v5 * v2;
+        return v - v3 / 6 + v5 / 120 - v7 / 5040;
+    }
+
+    float cosApprox(float v) {
+        float pi = 3.1415927;
+        float twopi = 6.2831853;
+        while (v > pi) { v = v - twopi; }
+        while (v < 0 - pi) { v = v + twopi; }
+        float v2 = v * v;
+        float v4 = v2 * v2;
+        float v6 = v4 * v2;
+        return 1 - v2 / 2 + v4 / 24 - v6 / 720;
+    }
+
+    void rotate(float angle) {
+        float cosA = cosApprox(angle);
+        float sinA = sinApprox(angle);
+        float newX = x * cosA - y * sinA;
+        float newY = x * sinA + y * cosA;
+        x = newX;
+        y = newY;
+    }
+
+    // Rotate by angle in radians (Taylor series)
+
+
+
+
+
+
+    float angle() {
+        float pi = 3.1415927;
+        float ax = x;
+        float ay = y;
+        bool negX = false;
+        bool negY = false;
+        if (ax < 0) { negX = true; ax = 0 - ax; }
+        if (ay < 0) { negY = true; ay = 0 - ay; }
+        float result = 0;
+        if (ax == 0 && ay == 0) { return 0; }
+        if (ax >= ay) {
+            float t = ay / ax;
+            result = t - t * t * t / 3 + t * t * t * t * t / 5;
+        } else {
+            float t = ax / ay;
+            result = pi / 2 - (t - t * t * t / 3 + t * t * t * t * t / 5);
+        }
+        if (negX && !negY) { result = pi - result; }
+        if (negX && negY) { result = 0 - pi + result; }
+        if (!negX && negY) { result = 0 - result; }
+        return result;
+    }
+
+    float angleTo(Vec2 other) {
+        Vec2 diff = new Vec2();
+        diff.setf(other.x - x, other.y - y);
+        return diff.angle();
+    }
+
+    bool equals(Vec2 other) {
+        float dx = x - other.x;
+        float dy = y - other.y;
+        if (dx < 0) { dx = 0 - dx; }
+        if (dy < 0) { dy = 0 - dy; }
+        if (dx < 0.0001 && dy < 0.0001) { return true; }
+        return false;
+    }
+
+    bool isZero() {
+        if (absf(x) < 0.0001 && absf(y) < 0.0001) { return true; }
+        return false;
+    }
+
+
+
+
+
+    string intToStr(int n) {
+        if (n == 0) { return "0"; }
+        string result = "";
+        bool neg = false;
+        if (n < 0) { neg = true; n = 0 - n; }
+        while (n > 0) {
+            int d = n - (n / 10) * 10;
+            string s = "0";
+            if (d == 1) { s = "1"; } if (d == 2) { s = "2"; }
+            if (d == 3) { s = "3"; } if (d == 4) { s = "4"; }
+            if (d == 5) { s = "5"; } if (d == 6) { s = "6"; }
+            if (d == 7) { s = "7"; } if (d == 8) { s = "8"; }
+            if (d == 9) { s = "9"; }
+            result = s + result;
+            n = n / 10;
+        }
+        if (neg) { result = "-" + result; }
+        return result;
+    }
+
+    string floatToStr(float f) {
+        int whole = 0;
+        if (f >= 0) {
+            while (whole + 1 <= f) { whole = whole + 1; }
+        } else {
+            while (whole > f) { whole = whole - 1; }
+        }
+        float frac = f - whole;
+        if (frac < 0) { frac = 0 - frac; }
+        int fracPart = 0;
+        float tmp = frac * 100;
+        while (fracPart + 1 <= tmp) { fracPart = fracPart + 1; }
+        string fs = intToStr(fracPart);
+        while (fs.length < 2) { fs = "0" + fs; }
+        return intToStr(whole) + "." + fs;
+    }
+
+    string toString() {
+        return "(" + floatToStr(x) + ", " + floatToStr(y) + ")";
+    }
+
+    void print() {
+        print(toString());
+    }
+}
+
+// ============================================================
+// STANDALONE FUNCTIONS
+// ============================================================
+
+Vec2 vec2Add(Vec2 a, Vec2 b) {
+    Vec2 result = new Vec2();
+    result.setf(a.x + b.x, a.y + b.y);
+    return result;
+}
+
+Vec2 vec2Sub(Vec2 a, Vec2 b) {
+    Vec2 result = new Vec2();
+    result.setf(a.x - b.x, a.y - b.y);
+    return result;
+}
+
+Vec2 vec2Scale(Vec2 a, float s) {
+    Vec2 result = new Vec2();
+    result.setf(a.x * s, a.y * s);
+    return result;
+}
+
+Vec2 vec2Lerp(Vec2 a, Vec2 b, float t) {
+    Vec2 result = new Vec2();
+    result.setf(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+    return result;
+}

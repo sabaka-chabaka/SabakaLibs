@@ -1,0 +1,287 @@
+import "math.sabaka";
+
+string HEX_CHARS_COLOR = "0123456789abcdef";
+
+class Color {
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    int a = 255;
+
+    void Color() {}
+
+    void fromRGB(int pr, int pg, int pb) {
+        r = pr;
+        g = pg;
+        b = pb;
+        a = 255;
+    }
+
+    void fromRGBA(int pr, int pg, int pb, int pa) {
+        r = pr;
+        g = pg;
+        b = pb;
+        a = pa;
+    }
+
+    void clampChannels() {
+        if (r < 0) { r = 0; } if (r > 255) { r = 255; }
+        if (g < 0) { g = 0; } if (g > 255) { g = 255; }
+        if (b < 0) { b = 0; } if (b > 255) { b = 255; }
+        if (a < 0) { a = 0; } if (a > 255) { a = 255; }
+    }
+
+    string channelHex(int n) {
+        if (n < 0) { n = 0; }
+        if (n > 255) { n = 255; }
+        int hi = n / 16;
+        int lo = n - hi * 16;
+        return HEX_CHARS_COLOR[hi] + HEX_CHARS_COLOR[lo];
+    }
+
+    string toHex() {
+        return "#" + channelHex(r) + channelHex(g) + channelHex(b);
+    }
+
+    string toHexA() {
+        return "#" + channelHex(r) + channelHex(g) + channelHex(b) + channelHex(a);
+    }
+
+    string toRGBString() {
+        return "rgb(" + intToStr(r) + ", " + intToStr(g) + ", " + intToStr(b) + ")";
+    }
+
+    string toRGBAString() {
+        return "rgba(" + intToStr(r) + ", " + intToStr(g) + ", " + intToStr(b) + ", " + intToStr(a) + ")";
+    }
+
+    int brightness() {
+        return (r * 299 + g * 587 + b * 114) / 1000;
+    }
+
+    bool isDark() {
+        if (brightness() < 128) { return true; }
+        return false;
+    }
+
+    void invert() {
+        r = 255 - r;
+        g = 255 - g;
+        b = 255 - b;
+    }
+
+    void grayscale() {
+        int gray = brightness();
+        r = gray;
+        g = gray;
+        b = gray;
+    }
+
+    void lighten(int amount) {
+        r = r + amount;
+        g = g + amount;
+        b = b + amount;
+        clampChannels();
+    }
+
+    void darken(int amount) {
+        r = r - amount;
+        g = g - amount;
+        b = b - amount;
+        clampChannels();
+    }
+
+    void mix(Color other, int t) {
+        r = r + (other.r - r) * t / 100;
+        g = g + (other.g - g) * t / 100;
+        b = b + (other.b - b) * t / 100;
+        a = a + (other.a - a) * t / 100;
+        clampChannels();
+    }
+
+    void setAlpha(int pa) {
+        a = pa;
+        if (a < 0) { a = 0; }
+        if (a > 255) { a = 255; }
+    }
+
+    int hslChannel(int p, int q, int t) {
+        int result = 0;
+        if (t < 167) {
+            result = p + (q - p) * 6 * t / 1000;
+        } else if (t < 500) {
+            result = q;
+        } else if (t < 667) {
+            result = p + (q - p) * (667 - t) * 6 / 1000;
+        } else {
+            result = p;
+        }
+        return result * 255 / 100;
+    }
+
+    void fromHSL(int h, int s, int l) {
+        if (s == 0) {
+            int gray = l * 255 / 100;
+            r = gray;
+            g = gray;
+            b = gray;
+            a = 255;
+        } else {
+            int sl = s;
+            int ll = l;
+
+            int q = 0;
+            if (ll < 50) {
+                q = ll * (100 + sl) / 100;
+            } else {
+                q = ll + sl - ll * sl / 100;
+            }
+            int p = 2 * ll - q;
+
+            int hk = h * 1000 / 360;
+
+            int tr = hk + 333;
+            int tg = hk;
+            int tb = hk - 333;
+
+            if (tr > 1000) { tr = tr - 1000; }
+            if (tb < 0) { tb = tb + 1000; }
+
+            r = hslChannel(p, q, tr);
+            g = hslChannel(p, q, tg);
+            b = hslChannel(p, q, tb);
+            a = 255;
+        }
+    }
+
+    int getHue() {
+        int maxC = r;
+        if (g > maxC) { maxC = g; }
+        if (b > maxC) { maxC = b; }
+        int minC = r;
+        if (g < minC) { minC = g; }
+        if (b < minC) { minC = b; }
+        int delta = maxC - minC;
+        if (delta == 0) { return 0; }
+        int h = 0;
+        if (maxC == r) {
+            h = 60 * ((g - b) / delta);
+        } else if (maxC == g) {
+            h = 60 * ((b - r) / delta + 2);
+        } else {
+            h = 60 * ((r - g) / delta + 4);
+        }
+        if (h < 0) { h = h + 360; }
+        return h;
+    }
+
+    int getSaturation() {
+        int maxC = r;
+        if (g > maxC) { maxC = g; }
+        if (b > maxC) { maxC = b; }
+        int minC = r;
+        if (g < minC) { minC = g; }
+        if (b < minC) { minC = b; }
+        int delta = maxC - minC;
+        int ll = (maxC + minC) / 2;
+        if (delta == 0) { return 0; }
+        int denom = 255 - (maxC + minC - 255);
+        if (denom < 0) { denom = maxC + minC - 255; }
+        if (denom == 0) { return 0; }
+        return delta * 100 / denom;
+    }
+
+    int getLightness() {
+        int maxC = r;
+        if (g > maxC) { maxC = g; }
+        if (b > maxC) { maxC = b; }
+        int minC = r;
+        if (g < minC) { minC = g; }
+        if (b < minC) { minC = b; }
+        return (maxC + minC) * 100 / (255 * 2);
+    }
+
+    void print() {
+        print(toHex() + " " + toRGBString() + " brightness=" + intToStr(brightness()));
+    }
+}
+
+Color colorRed() {
+    Color c = new Color();
+    c.fromRGB(255, 0, 0);
+    return c;
+}
+
+Color colorGreen() {
+    Color c = new Color();
+    c.fromRGB(0, 255, 0);
+    return c;
+}
+
+Color colorBlue() {
+    Color c = new Color();
+    c.fromRGB(0, 0, 255);
+    return c;
+}
+
+Color colorWhite() {
+    Color c = new Color();
+    c.fromRGB(255, 255, 255);
+    return c;
+}
+
+Color colorBlack() {
+    Color c = new Color();
+    c.fromRGB(0, 0, 0);
+    return c;
+}
+
+Color colorYellow() {
+    Color c = new Color();
+    c.fromRGB(255, 255, 0);
+    return c;
+}
+
+Color colorCyan() {
+    Color c = new Color();
+    c.fromRGB(0, 255, 255);
+    return c;
+}
+
+Color colorMagenta() {
+    Color c = new Color();
+    c.fromRGB(255, 0, 255);
+    return c;
+}
+
+Color colorOrange() {
+    Color c = new Color();
+    c.fromRGB(255, 165, 0);
+    return c;
+}
+
+Color colorPurple() {
+    Color c = new Color();
+    c.fromRGB(128, 0, 128);
+    return c;
+}
+
+string intToStr(int n) {
+    if (n == 0) { return "0"; }
+    string result = "";
+    bool negative = false;
+    if (n < 0) { negative = true; n = 0 - n; }
+    while (n > 0) {
+        int digit = n - (n / 10) * 10;
+        string d = "0";
+        if (digit == 1) { d = "1"; } if (digit == 2) { d = "2"; }
+        if (digit == 3) { d = "3"; } if (digit == 4) { d = "4"; }
+        if (digit == 5) { d = "5"; } if (digit == 6) { d = "6"; }
+        if (digit == 7) { d = "7"; } if (digit == 8) { d = "8"; }
+        if (digit == 9) { d = "9"; }
+        result = d + result;
+        n = n / 10;
+    }
+    if (negative) { result = "-" + result; }
+    return result;
+}

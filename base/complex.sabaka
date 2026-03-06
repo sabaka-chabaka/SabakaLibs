@@ -1,0 +1,252 @@
+import "math.sabaka";
+
+class Complex {
+    float re = 0;
+    float im = 0;
+
+    void Complex() {}
+
+    void fromRI(float r, float i) {
+        re = r;
+        im = i;
+    }
+
+    void fromReal(float r) {
+        re = r;
+        im = 0;
+    }
+
+    float sinApprox(float x) {
+        // normalize to -PI..PI
+        float pi = 3.1415927;
+        float twopi = 6.2831853;
+        while (x > pi) { x = x - twopi; }
+        while (x < 0 - pi) { x = x + twopi; }
+        float x2 = x * x;
+        float x3 = x2 * x;
+        float x5 = x3 * x2;
+        float x7 = x5 * x2;
+        return x - x3 / 6 + x5 / 120 - x7 / 5040;
+    }
+
+    float cosApprox(float x) {
+        float pi = 3.1415927;
+        float twopi = 6.2831853;
+        while (x > pi) { x = x - twopi; }
+        while (x < 0 - pi) { x = x + twopi; }
+        float x2 = x * x;
+        float x4 = x2 * x2;
+        float x6 = x4 * x2;
+        return 1 - x2 / 2 + x4 / 24 - x6 / 720;
+    }
+
+    void fromPolar(float magnitude, float angleRad) {
+        re = magnitude * cosApprox(angleRad);
+        im = magnitude * sinApprox(angleRad);
+    }
+
+
+    // sin via Taylor series: x - x^3/6 + x^5/120 - x^7/5040
+
+
+    float sqrtApprox(float x) {
+        if (x <= 0) { return 0; }
+        float guess = x / 2;
+        int i = 0;
+        while (i < 30) {
+            guess = (guess + x / guess) / 2;
+            i = i + 1;
+        }
+        return guess;
+    }
+
+    float atanApprox(float x) {
+        // atan via series - works well for |x| <= 1
+        // for |x| > 1 use atan(x) = PI/2 - atan(1/x)
+        float pi = 3.1415927;
+        bool flip = false;
+        bool negate = false;
+        if (x < 0) { x = 0 - x; negate = true; }
+        if (x > 1) { x = 1 / x; flip = true; }
+        float x2 = x * x;
+        float result = x - x * x2 / 3 + x * x2 * x2 / 5 - x * x2 * x2 * x2 / 7;
+        if (flip) { result = pi / 2 - result; }
+        if (negate) { result = 0 - result; }
+        return result;
+    }
+
+    float atan2Approx(float y, float x) {
+        float pi = 3.1415927;
+        if (x > 0) { return atanApprox(y / x); }
+        if (x < 0 && y >= 0) { return atanApprox(y / x) + pi; }
+        if (x < 0 && y < 0) { return atanApprox(y / x) - pi; }
+        if (x == 0 && y > 0) { return pi / 2; }
+        if (x == 0 && y < 0) { return 0 - pi / 2; }
+        return 0;
+    }
+
+    float abs() {
+        return sqrtApprox(re * re + im * im);
+    }
+
+    float arg() {
+        return atan2Approx(im, re);
+    }
+
+    void add(Complex other) {
+        re = re + other.re;
+        im = im + other.im;
+    }
+
+    void sub(Complex other) {
+        re = re - other.re;
+        im = im - other.im;
+    }
+
+    void mul(Complex other) {
+        float newRe = re * other.re - im * other.im;
+        float newIm = re * other.im + im * other.re;
+        re = newRe;
+        im = newIm;
+    }
+
+    void div(Complex other) {
+        float denom = other.re * other.re + other.im * other.im;
+        float newRe = (re * other.re + im * other.im) / denom;
+        float newIm = (im * other.re - re * other.im) / denom;
+        re = newRe;
+        im = newIm;
+    }
+
+    void scale(float s) {
+        re = re * s;
+        im = im * s;
+    }
+
+    void conjugate() {
+        im = 0 - im;
+    }
+
+    void negate() {
+        re = 0 - re;
+        im = 0 - im;
+    }
+
+    void normalize() {
+        float mag = abs();
+        if (mag > 0) {
+            re = re / mag;
+            im = im / mag;
+        }
+    }
+
+    // e^z = e^a * (cos(b) + i*sin(b))
+    void exp() {
+        float eA = 2.7182818;
+        float mag = 1;
+        float ea = re;
+        // compute e^re roughly
+        bool neg = false;
+        if (ea < 0) { neg = true; ea = 0 - ea; }
+        int steps = 0;
+        float base = eA;
+        while (steps < 20 && ea >= 1) {
+            mag = mag * base;
+            ea = ea - 1;
+            steps = steps + 1;
+        }
+        // fractional part via 1 + x + x^2/2
+        mag = mag * (1 + ea + ea * ea / 2 + ea * ea * ea / 6);
+        if (neg) { mag = 1 / mag; }
+        re = mag * cosApprox(im);
+        im = mag * sinApprox(im);
+    }
+
+    // z^n for integer n
+    void powi(int n) {
+        if (n == 0) { re = 1; im = 0; }
+        bool neg = false;
+        if (n < 0) { neg = true; n = 0 - n; }
+        float origRe = re;
+        float origIm = im;
+        float accRe = 1;
+        float accIm = 0;
+        int i = 0;
+        while (i < n) {
+            float newRe = accRe * origRe - accIm * origIm;
+            float newIm = accRe * origIm + accIm * origRe;
+            accRe = newRe;
+            accIm = newIm;
+            i = i + 1;
+        }
+        re = accRe;
+        im = accIm;
+        if (neg) {
+            float denom = re * re + im * im;
+            re = re / denom;
+            im = 0 - im / denom;
+        }
+    }
+
+    bool equals(Complex other) {
+        float diff1 = re - other.re;
+        float diff2 = im - other.im;
+        if (diff1 < 0) { diff1 = 0 - diff1; }
+        if (diff2 < 0) { diff2 = 0 - diff2; }
+        if (diff1 < 0.0001 && diff2 < 0.0001) { return true; }
+        return false;
+    }
+
+
+
+    string intToStr(int n) {
+        if (n == 0) { return "0"; }
+        string result = "";
+        bool negative = false;
+        if (n < 0) { negative = true; n = 0 - n; }
+        while (n > 0) {
+            int digit = n - (n / 10) * 10;
+            string d = "0";
+            if (digit == 1) { d = "1"; } if (digit == 2) { d = "2"; }
+            if (digit == 3) { d = "3"; } if (digit == 4) { d = "4"; }
+            if (digit == 5) { d = "5"; } if (digit == 6) { d = "6"; }
+            if (digit == 7) { d = "7"; } if (digit == 8) { d = "8"; }
+            if (digit == 9) { d = "9"; }
+            result = d + result;
+            n = n / 10;
+        }
+        if (negative) { result = "-" + result; }
+        return result;
+    }
+
+    string floatToStr(float f) {
+        int whole = 0;
+        if (f >= 0) {
+            while (whole + 1 <= f) { whole = whole + 1; }
+        } else {
+            while (whole > f) { whole = whole - 1; }
+        }
+        float frac = f - whole;
+        if (frac < 0) { frac = 0 - frac; }
+        int fracPart = 0;
+        float tmp = frac * 1000;
+        while (fracPart + 1 <= tmp) { fracPart = fracPart + 1; }
+        string fracStr = intToStr(fracPart);
+        while (fracStr.length < 3) { fracStr = "0" + fracStr; }
+        return intToStr(whole) + "." + fracStr;
+    }
+
+    void print() {
+        string sign = "+";
+        float imAbs = im;
+        if (im < 0) { sign = "-"; imAbs = 0 - im; }
+        print(floatToStr(re) + " " + sign + " " + floatToStr(imAbs) + "i");
+    }
+
+    string toString() {
+        string sign = "+";
+        float imAbs = im;
+        if (im < 0) { sign = "-"; imAbs = 0 - im; }
+        return floatToStr(re) + " " + sign + " " + floatToStr(imAbs) + "i";
+    }
+}
