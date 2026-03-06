@@ -175,3 +175,49 @@ List<string> split(string s, string delimiter) {
     }
     return result;
 }
+
+string toSnakeCase(string s) {
+    string result = "";
+    int i = 0;
+    while (i < s.length) {
+        string c = s[i];
+        if (c == "A" || c == "B" || c == "C" || c == "D" || c == "E" ||
+            c == "F" || c == "G" || c == "H" || c == "I" || c == "J" ||
+            c == "K" || c == "L" || c == "M" || c == "N" || c == "O" ||
+            c == "P" || c == "Q" || c == "R" || c == "S" || c == "T" ||
+            c == "U" || c == "V" || c == "W" || c == "X" || c == "Y" ||
+            c == "Z") {
+            if (i > 0) { result = result + "_"; }
+            if (c == "A") { result = result + "a"; }
+            if (c == "B") { result = result + "b"; }
+            if (c == "C") { result = result + "c"; }
+            if (c == "D") { result = result + "d"; }
+            if (c == "E") { result = result + "e"; }
+            if (c == "F") { result = result + "f"; }
+            if (c == "G") { result = result + "g"; }
+            if (c == "H") { result = result + "h"; }
+            if (c == "I") { result = result + "i"; }
+            if (c == "J") { result = result + "j"; }
+            if (c == "K") { result = result + "k"; }
+            if (c == "L") { result = result + "l"; }
+            if (c == "M") { result = result + "m"; }
+            if (c == "N") { result = result + "n"; }
+            if (c == "O") { result = result + "o"; }
+            if (c == "P") { result = result + "p"; }
+            if (c == "Q") { result = result + "q"; }
+            if (c == "R") { result = result + "r"; }
+            if (c == "S") { result = result + "s"; }
+            if (c == "T") { result = result + "t"; }
+            if (c == "U") { result = result + "u"; }
+            if (c == "V") { result = result + "v"; }
+            if (c == "W") { result = result + "w"; }
+            if (c == "X") { result = result + "x"; }
+            if (c == "Y") { result = result + "y"; }
+            if (c == "Z") { result = result + "z"; }
+        } else {
+            result = result + c;
+        }
+        i = i + 1;
+    }
+    return result;
+}
