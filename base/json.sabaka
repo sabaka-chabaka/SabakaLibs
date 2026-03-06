@@ -1,0 +1,133 @@
+import "list.sabaka";
+
+string JSON_QUOTE = "x";
+
+void jsonInit() {
+    string[] chars = ["\""];
+    JSON_QUOTE = chars[0];
+}
+
+string jsonWrap(string value) {
+    string q = JSON_QUOTE;
+    return q + value + q;
+}
+
+string jsonInt(int value) {
+    if (value == 0) { return "0"; }
+    string result = "";
+    bool negative = false;
+    if (value < 0) {
+        negative = true;
+        value = 0 - value;
+    }
+    while (value > 0) {
+        int digit = value - (value / 10) * 10;
+        string d = "0";
+        if (digit == 1) { d = "1"; }
+        if (digit == 2) { d = "2"; }
+        if (digit == 3) { d = "3"; }
+        if (digit == 4) { d = "4"; }
+        if (digit == 5) { d = "5"; }
+        if (digit == 6) { d = "6"; }
+        if (digit == 7) { d = "7"; }
+        if (digit == 8) { d = "8"; }
+        if (digit == 9) { d = "9"; }
+        result = d + result;
+        value = value / 10;
+    }
+    if (negative) { result = "-" + result; }
+    return result;
+}
+
+string jsonBool(bool value) {
+    if (value) { return "true"; }
+    return "false";
+}
+
+string jsonNull() {
+    return "null";
+}
+
+class JsonObject {
+    List<string> keys = new List<string>();
+    List<string> vals = new List<string>();
+
+    void JsonObject() {}
+
+    void setPair(string key, string jsonValue) {
+        int found = -1;
+        int i = 0;
+        while (i < keys.values.length) {
+            if (keys.values[i] == key) { found = i; }
+            i = i + 1;
+        }
+        if (found != -1) {
+            vals.values[found] = jsonValue;
+        } else {
+            keys.push_back(key);
+            vals.push_back(jsonValue);
+        }
+    }
+
+    void setString(string key, string value) {
+        setPair(key, jsonWrap(value));
+    }
+
+    void setInt(string key, int value) {
+        setPair(key, jsonInt(value));
+    }
+
+    void setBool(string key, bool value) {
+        setPair(key, jsonBool(value));
+    }
+
+    void setNull(string key) {
+        setPair(key, jsonNull());
+    }
+
+    void setObject(string key, JsonObject obj) {
+        setPair(key, obj.build());
+    }
+
+    void setArray(string key, JsonArray arr) {
+        setPair(key, arr.build());
+    }
+
+    string build() {
+        string result = "{";
+        int i = 0;
+        while (i < keys.values.length) {
+            if (i > 0) { result = result + ","; }
+            result = result + jsonWrap(keys.values[i]) + ":" + vals.values[i];
+            i = i + 1;
+        }
+        result = result + "}";
+        return result;
+    }
+}
+
+class JsonArray {
+    List<string> items = new List<string>();
+
+    void JsonArray() {}
+
+    void add(string jsonValue) { items.push_back(jsonValue); }
+    void addString(string value) { add(jsonWrap(value)); }
+    void addInt(int value) { add(jsonInt(value)); }
+    void addBool(bool value) { add(jsonBool(value)); }
+    void addNull() { add(jsonNull()); }
+    void addObject(JsonObject obj) { add(obj.build()); }
+    void addArray(JsonArray arr) { add(arr.build()); }
+
+    string build() {
+        string result = "[";
+        int i = 0;
+        while (i < items.values.length) {
+            if (i > 0) { result = result + ","; }
+            result = result + items.values[i];
+            i = i + 1;
+        }
+        result = result + "]";
+        return result;
+    }
+}

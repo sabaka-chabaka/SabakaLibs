@@ -1,5 +1,8 @@
-import "base/random.sabaka";
+import "base/json.sabaka";
 
-Random random = new Random();
-print(random.seed);
-print(random.randomRange(1, 10));
+jsonInit();
+
+JsonObject obj = new JsonObject();
+obj.setString("name", "Alice");
+obj.setInt("age", 25);
+print(obj.build());
