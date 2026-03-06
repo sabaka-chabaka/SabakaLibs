@@ -1,0 +1,44 @@
+import "map.sabaka";
+
+class Set<T> {
+    Map<T, bool> data = new Map<T, bool>();
+    int count = 0;
+
+    void Set() {}
+
+    bool contains(T value) {
+        return data.containsKey(value);
+    }
+
+    bool add(T value) {
+        if (contains(value)) { return false; }
+        data.set(value, true);
+        count = count + 1;
+        return true;
+    }
+
+    bool remove(T value) {
+        if (!contains(value)) { return false; }
+        data.remove(value);
+        count = count - 1;
+        return true;
+    }
+
+    int size() {
+        return count;
+    }
+
+    bool isEmpty() {
+        if (count == 0) { return true; }
+        return false;
+    }
+
+    void clear() {
+        data.clear();
+        count = 0;
+    }
+
+    void print() {
+        data.print();
+    }
+}

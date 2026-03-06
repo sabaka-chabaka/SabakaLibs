@@ -1,0 +1,71 @@
+import "list.sabaka";
+
+class Deque<T> {
+    List<T> items = new List<T>();
+
+    void Deque() {}
+
+    int size() {
+        return items.values.length;
+    }
+
+    bool isEmpty() {
+        if (items.values.length == 0) { return true; }
+        return false;
+    }
+
+    void pushFront(T value) {
+        List<T> newItems = new List<T>();
+        newItems.push_back(value);
+        int i = 0;
+        while (i < items.values.length) {
+            newItems.push_back(items.values[i]);
+            i = i + 1;
+        }
+        items = newItems;
+    }
+
+    void pushBack(T value) {
+        items.push_back(value);
+    }
+
+    T front() {
+        return items.values[0];
+    }
+
+    T back() {
+        return items.values[items.values.length - 1];
+    }
+
+    void popFront() {
+        if (isEmpty()) { return; }
+        List<T> newItems = new List<T>();
+        int i = 1;
+        while (i < items.values.length) {
+            newItems.push_back(items.values[i]);
+            i = i + 1;
+        }
+        items = newItems;
+    }
+
+    void popBack() {
+        if (isEmpty()) { return; }
+        items.pop_back();
+    }
+
+    T get(int index) {
+        return items.values[index];
+    }
+
+    void clear() {
+        items.clear();
+    }
+
+    void print() {
+        items.print();
+    }
+
+    void printLines() {
+        items.printLines();
+    }
+}

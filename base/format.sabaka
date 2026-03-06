@@ -1,0 +1,207 @@
+import "list.sabaka";
+
+string intToString(int n) {
+    if (n == 0) { return "0"; }
+    string result = "";
+    bool negative = false;
+    if (n < 0) { negative = true; n = 0 - n; }
+    while (n > 0) {
+        int digit = n - (n / 10) * 10;
+        string d = "0";
+        if (digit == 1) { d = "1"; } if (digit == 2) { d = "2"; }
+        if (digit == 3) { d = "3"; } if (digit == 4) { d = "4"; }
+        if (digit == 5) { d = "5"; } if (digit == 6) { d = "6"; }
+        if (digit == 7) { d = "7"; } if (digit == 8) { d = "8"; }
+        if (digit == 9) { d = "9"; }
+        result = d + result;
+        n = n / 10;
+    }
+    if (negative) { result = "-" + result; }
+    return result;
+}
+
+string floatToString(float f, int decimals) {
+    bool negative = false;
+    if (f < 0) { negative = true; f = 0 - f; }
+    int whole = 0;
+    while (whole + 1 <= f) { whole = whole + 1; }
+    float frac = f - whole;
+    int i = 0;
+    while (i < decimals) { frac = frac * 10; i = i + 1; }
+    int fracInt = 0;
+    while (fracInt + 1 <= frac) { fracInt = fracInt + 1; }
+    string fracStr = intToString(fracInt);
+    while (fracStr.length < decimals) { fracStr = "0" + fracStr; }
+    string result = intToString(whole);
+    if (decimals > 0) { result = result + "." + fracStr; }
+    if (negative) { result = "-" + result; }
+    return result;
+}
+
+string padLeft(string s, int width, string padChar) {
+    while (s.length < width) { s = padChar + s; }
+    return s;
+}
+
+string padRight(string s, int width, string padChar) {
+    while (s.length < width) { s = s + padChar; }
+    return s;
+}
+
+string padCenter(string s, int width, string padChar) {
+    bool left = true;
+    while (s.length < width) {
+        if (left) { s = padChar + s; } else { s = s + padChar; }
+        left = !left;
+    }
+    return s;
+}
+
+string truncate(string s, int maxLen, string suffix) {
+    if (s.length <= maxLen) { return s; }
+    int cutAt = maxLen - suffix.length;
+    if (cutAt < 0) { cutAt = 0; }
+    string result = "";
+    int i = 0;
+    while (i < cutAt) { result = result + s[i]; i = i + 1; }
+    return result + suffix;
+}
+
+string repeatStr(string s, int times) {
+    string result = "";
+    int i = 0;
+    while (i < times) { result = result + s; i = i + 1; }
+    return result;
+}
+
+string fmtInt(int n, int width) {
+    return padLeft(intToString(n), width, " ");
+}
+
+string fmtFloat(float f, int width, int decimals) {
+    return padLeft(floatToString(f, decimals), width, " ");
+}
+
+string fmtLeft(string s, int width) {
+    return padRight(s, width, " ");
+}
+
+string fmtRight(string s, int width) {
+    return padLeft(s, width, " ");
+}
+
+string fmtCenter(string s, int width) {
+    return padCenter(s, width, " ");
+}
+
+string ruler(int width, string ch) {
+    return repeatStr(ch, width);
+}
+
+// ============================================================
+// TABLE
+// ============================================================
+
+class Table {
+    List<string> headers = new List<string>();
+    List<int> widths = new List<int>();
+    List<string> rows = new List<string>();
+    int colCount = 0;
+    string separator = "|";
+    string headerSep = "=";
+    string rowSep = "-";
+
+    void Table() {}
+
+    string repeatStrI(string s, int times) {
+        string result = "";
+        int i = 0;
+        while (i < times) { result = result + s; i = i + 1; }
+        return result;
+    }
+
+    string fmtLeftI(string s, int width) {
+        while (s.length < width) { s = s + " "; }
+        return s;
+    }
+
+    string fmtCenterI(string s, int width) {
+        bool left = true;
+        while (s.length < width) {
+            if (left) { s = " " + s; } else { s = s + " "; }
+            left = !left;
+        }
+        return s;
+    }
+
+    void addHeader(string name, int width) {
+        headers.push_back(name);
+        widths.push_back(width);
+        colCount = colCount + 1;
+    }
+
+    void addRow(string rowData) {
+        rows.push_back(rowData);
+    }
+
+    string buildSepLine(string ch) {
+        string line = "+";
+        int i = 0;
+        while (i < widths.values.length) {
+            line = line + repeatStrI(ch, widths.values[i] + 2) + "+";
+            i = i + 1;
+        }
+        return line;
+    }
+
+    string buildHeaderLine() {
+        string line = separator;
+        int i = 0;
+        while (i < headers.values.length) {
+            string cell = fmtCenterI(headers.values[i], widths.values[i]);
+            line = line + " " + cell + " " + separator;
+            i = i + 1;
+        }
+        return line;
+    }
+
+    string buildRowLine(string rowData) {
+        string line = separator;
+        int col = 0;
+        int start = 0;
+        int i = 0;
+        while (i <= rowData.length && col < colCount) {
+            bool atEnd = false;
+            if (i == rowData.length) { atEnd = true; }
+            bool atSep = false;
+            if (i < rowData.length && rowData[i] == "\t") { atSep = true; }
+            if (atEnd || atSep) {
+                string cell = "";
+                int j = start;
+                while (j < i) { cell = cell + rowData[j]; j = j + 1; }
+                int w = 10;
+                if (col < widths.values.length) { w = widths.values[col]; }
+                line = line + " " + fmtLeftI(cell, w) + " " + separator;
+                start = i + 1;
+                col = col + 1;
+            }
+            i = i + 1;
+        }
+        return line;
+    }
+
+    void print() {
+        string topLine = buildSepLine("-");
+        string headerLine = buildHeaderLine();
+        string headerSepLine = buildSepLine("=");
+        print(topLine);
+        print(headerLine);
+        print(headerSepLine);
+        int i = 0;
+        while (i < rows.values.length) {
+            print(buildRowLine(rows.values[i]));
+            i = i + 1;
+        }
+        print(buildSepLine("-"));
+    }
+}

@@ -1,0 +1,169 @@
+int stringToInt(string s) {
+    if (s.length == 0) { return 0; }
+    int result = 0;
+    bool negative = false;
+    int i = 0;
+    if (s[0] == "-") { negative = true; i = 1; }
+    if (s[0] == "+") { i = 1; }
+    while (i < s.length) {
+        int code = ord(s[i]);
+        if (code < 48 || code > 57) { return result; }
+        result = result * 10 + (code - 48);
+        i = i + 1;
+    }
+    if (negative) { result = 0 - result; }
+    return result;
+}
+
+float stringToFloat(string s) {
+    if (s.length == 0) { return 0; }
+    bool negative = false;
+    int i = 0;
+    if (s[0] == "-") { negative = true; i = 1; }
+    if (s[0] == "+") { i = 1; }
+
+    float whole = 0;
+    while (i < s.length && s[i] != ".") {
+        int code = ord(s[i]);
+        if (code < 48 || code > 57) { return whole; }
+        whole = whole * 10 + (code - 48);
+        i = i + 1;
+    }
+
+    float frac = 0;
+    float place = 0.1;
+    if (i < s.length && s[i] == ".") {
+        i = i + 1;
+        while (i < s.length) {
+            int code = ord(s[i]);
+            if (code < 48 || code > 57) { return whole + frac; }
+            frac = frac + (code - 48) * place;
+            place = place / 10;
+            i = i + 1;
+        }
+    }
+
+    float result = whole + frac;
+    if (negative) { result = 0 - result; }
+    return result;
+}
+
+string intToString(int n) {
+    if (n == 0) { return "0"; }
+    string result = "";
+    bool negative = false;
+    if (n < 0) { negative = true; n = 0 - n; }
+    while (n > 0) {
+        int digit = n - (n / 10) * 10;
+        string d = "0";
+        if (digit == 1) { d = "1"; } if (digit == 2) { d = "2"; }
+        if (digit == 3) { d = "3"; } if (digit == 4) { d = "4"; }
+        if (digit == 5) { d = "5"; } if (digit == 6) { d = "6"; }
+        if (digit == 7) { d = "7"; } if (digit == 8) { d = "8"; }
+        if (digit == 9) { d = "9"; }
+        result = d + result;
+        n = n / 10;
+    }
+    if (negative) { result = "-" + result; }
+    return result;
+}
+
+string floatToString(float f, int decimals) {
+    bool negative = false;
+    if (f < 0) { negative = true; f = 0 - f; }
+    int whole = 0;
+    while (whole + 1 <= f) { whole = whole + 1; }
+    float frac = f - whole;
+    int i = 0;
+    while (i < decimals) { frac = frac * 10; i = i + 1; }
+    int fracInt = 0;
+    while (fracInt + 1 <= frac) { fracInt = fracInt + 1; }
+    string fracStr = intToString(fracInt);
+    while (fracStr.length < decimals) { fracStr = "0" + fracStr; }
+    string result = intToString(whole);
+    if (decimals > 0) { result = result + "." + fracStr; }
+    if (negative) { result = "-" + result; }
+    return result;
+}
+
+bool stringToBool(string s) {
+    if (s == "true") { return true; }
+    if (s == "1") { return true; }
+    if (s == "yes") { return true; }
+    if (s == "on") { return true; }
+    return false;
+}
+
+string boolToString(bool b) {
+    if (b) { return "true"; }
+    return "false";
+}
+
+bool isDigit(string c) {
+    int code = ord(c);
+    if (code >= 48 && code <= 57) { return true; }
+    return false;
+}
+
+bool isAlpha(string c) {
+    int code = ord(c);
+    if (code >= 65 && code <= 90) { return true; }
+    if (code >= 97 && code <= 122) { return true; }
+    return false;
+}
+
+bool isAlphaNum(string c) {
+    if (isDigit(c)) { return true; }
+    if (isAlpha(c)) { return true; }
+    return false;
+}
+
+bool isWhitespace(string c) {
+    if (c == " ") { return true; }
+    if (c == "\t") { return true; }
+    if (c == "\n") { return true; }
+    if (c == "\r") { return true; }
+    return false;
+}
+
+bool isUpper(string c) {
+    int code = ord(c);
+    if (code >= 65 && code <= 90) { return true; }
+    return false;
+}
+
+bool isLower(string c) {
+    int code = ord(c);
+    if (code >= 97 && code <= 122) { return true; }
+    return false;
+}
+
+string toUpper(string s) {
+    string result = "";
+    int i = 0;
+    while (i < s.length) {
+        int code = ord(s[i]);
+        if (code >= 97 && code <= 122) {
+            result = result + chr(code - 32);
+        } else {
+            result = result + s[i];
+        }
+        i = i + 1;
+    }
+    return result;
+}
+
+string toLower(string s) {
+    string result = "";
+    int i = 0;
+    while (i < s.length) {
+        int code = ord(s[i]);
+        if (code >= 65 && code <= 90) {
+            result = result + chr(code + 32);
+        } else {
+            result = result + s[i];
+        }
+        i = i + 1;
+    }
+    return result;
+}

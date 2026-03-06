@@ -1,0 +1,132 @@
+int bitAnd(int a, int b) {
+    int result = 0;
+    int place = 1;
+    int i = 0;
+    while (i < 31) {
+        int bitA = a - (a / 2) * 2;
+        int bitB = b - (b / 2) * 2;
+        if (bitA == 1 && bitB == 1) {
+            result = result + place;
+        }
+        a = a / 2;
+        b = b / 2;
+        place = place * 2;
+        i = i + 1;
+    }
+    return result;
+}
+
+int bitOr(int a, int b) {
+    int result = 0;
+    int place = 1;
+    int i = 0;
+    while (i < 31) {
+        int bitA = a - (a / 2) * 2;
+        int bitB = b - (b / 2) * 2;
+        if (bitA == 1 || bitB == 1) {
+            result = result + place;
+        }
+        a = a / 2;
+        b = b / 2;
+        place = place * 2;
+        i = i + 1;
+    }
+    return result;
+}
+
+int bitXor(int a, int b) {
+    int result = 0;
+    int place = 1;
+    int i = 0;
+    while (i < 31) {
+        int bitA = a - (a / 2) * 2;
+        int bitB = b - (b / 2) * 2;
+        if (bitA != bitB) {
+            result = result + place;
+        }
+        a = a / 2;
+        b = b / 2;
+        place = place * 2;
+        i = i + 1;
+    }
+    return result;
+}
+
+int bitNot(int a) {
+    return bitXor(a, 2147483647);
+}
+
+int bitShl(int a, int n) {
+    int i = 0;
+    while (i < n) {
+        a = a * 2;
+        i = i + 1;
+    }
+    return a;
+}
+
+int bitShr(int a, int n) {
+    int i = 0;
+    while (i < n) {
+        a = a / 2;
+        i = i + 1;
+    }
+    return a;
+}
+
+bool bitTest(int a, int n) {
+    int shifted = bitShr(a, n);
+    if (shifted - (shifted / 2) * 2 == 1) { return true; }
+    return false;
+}
+
+int bitSet(int a, int n) {
+    return bitOr(a, bitShl(1, n));
+}
+
+int bitClear(int a, int n) {
+    int mask = bitNot(bitShl(1, n));
+    return bitAnd(a, mask);
+}
+
+int bitToggle(int a, int n) {
+    return bitXor(a, bitShl(1, n));
+}
+
+int bitCount(int a) {
+    int count = 0;
+    int i = 0;
+    while (i < 31) {
+        if (a - (a / 2) * 2 == 1) { count = count + 1; }
+        a = a / 2;
+        i = i + 1;
+    }
+    return count;
+}
+
+string toBinary(int a) {
+    if (a == 0) { return "0"; }
+    string result = "";
+    int i = 0;
+    while (i < 31 && a > 0) {
+        if (a - (a / 2) * 2 == 1) {
+            result = "1" + result;
+        } else {
+            result = "0" + result;
+        }
+        a = a / 2;
+        i = i + 1;
+    }
+    return result;
+}
+
+int fromBinary(string s) {
+    int result = 0;
+    int i = 0;
+    while (i < s.length) {
+        result = result * 2;
+        if (s[i] == "1") { result = result + 1; }
+        i = i + 1;
+    }
+    return result;
+}

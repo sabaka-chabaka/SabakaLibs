@@ -1,0 +1,211 @@
+import "convert.sabaka";
+import "math.sabaka";
+import "list.sabaka";
+
+class Matrix {
+    List<float> data = new List<float>();
+    int rows = 0;
+    int cols = 0;
+
+    void Matrix() {}
+
+    void init(int r, int c) {
+        rows = r;
+        cols = c;
+        data.clear();
+        int total = r * c;
+        int i = 0;
+        while (i < total) {
+            data.push_back(0);
+            i = i + 1;
+        }
+    }
+
+
+    void set(int r, int c, float v) {
+        data.values[r * cols + c] = v;
+    }
+
+    string intToStr(int n) {
+        if (n == 0) { return "0"; }
+        string result = "";
+        bool neg = false;
+        if (n < 0) { neg = true; n = 0 - n; }
+        while (n > 0) {
+            int d = n - (n / 10) * 10;
+            string s = "0";
+            if (d == 1) { s = "1"; } if (d == 2) { s = "2"; }
+            if (d == 3) { s = "3"; } if (d == 4) { s = "4"; }
+            if (d == 5) { s = "5"; } if (d == 6) { s = "6"; }
+            if (d == 7) { s = "7"; } if (d == 8) { s = "8"; }
+            if (d == 9) { s = "9"; }
+            result = s + result;
+            n = n / 10;
+        }
+        if (neg) { result = "-" + result; }
+        return result;
+    }
+    void identity(int n) {
+        init(n, n);
+        int i = 0;
+        while (i < n) {
+            set(i, i, 1);
+            i = i + 1;
+        }
+    }
+
+
+    void setInt(int r, int c, int v) {
+        float fv = v;
+        data.values[r * cols + c] = fv;
+    }
+
+    float get(int r, int c) {
+        return data.values[r * cols + c];
+    }
+
+    void add(Matrix other) {
+        int i = 0;
+        while (i < rows) {
+            int j = 0;
+            while (j < cols) {
+                float val = get(i, j) + other.get(i, j);
+                set(i, j, val);
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+    }
+
+    void sub(Matrix other) {
+        int i = 0;
+        while (i < rows) {
+            int j = 0;
+            while (j < cols) {
+                float val = get(i, j) - other.get(i, j);
+                set(i, j, val);
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+    }
+
+    void scale(float s) {
+        int i = 0;
+        while (i < data.values.length) {
+            data.values[i] = data.values[i] * s;
+            i = i + 1;
+        }
+    }
+
+    Matrix multiply(Matrix other) {
+        Matrix result = new Matrix();
+        result.init(rows, other.cols);
+        int i = 0;
+        while (i < rows) {
+            int j = 0;
+            while (j < other.cols) {
+                float sum = 0;
+                int k = 0;
+                while (k < cols) {
+                    sum = sum + get(i, k) * other.get(k, j);
+                    k = k + 1;
+                }
+                result.set(i, j, sum);
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+
+    Matrix transpose() {
+        Matrix result = new Matrix();
+        result.init(cols, rows);
+        int i = 0;
+        while (i < rows) {
+            int j = 0;
+            while (j < cols) {
+                result.set(j, i, get(i, j));
+                j = j + 1;
+            }
+            i = i + 1;
+        }
+        return result;
+    }
+
+    // Determinant for 2x2 and 3x3 only
+    float det2() {
+        return get(0, 0) * get(1, 1) - get(0, 1) * get(1, 0);
+    }
+
+    float det3() {
+        float a = get(0, 0) * (get(1, 1) * get(2, 2) - get(1, 2) * get(2, 1));
+        float b = get(0, 1) * (get(1, 0) * get(2, 2) - get(1, 2) * get(2, 0));
+        float c = get(0, 2) * (get(1, 0) * get(2, 1) - get(1, 1) * get(2, 0));
+        return a - b + c;
+    }
+
+    // Trace (sum of diagonal)
+    float trace() {
+        float sum = 0;
+        int n = rows;
+        if (cols < n) { n = cols; }
+        int i = 0;
+        while (i < n) {
+            sum = sum + get(i, i);
+            i = i + 1;
+        }
+        return sum;
+    }
+
+    bool equals(Matrix other) {
+        if (rows != other.rows) { return false; }
+        if (cols != other.cols) { return false; }
+        int i = 0;
+        while (i < data.values.length) {
+            float diff = data.values[i] - other.data.values[i];
+            if (diff < 0) { diff = 0 - diff; }
+            if (diff > 0.0001) { return false; }
+            i = i + 1;
+        }
+        return true;
+    }
+
+
+
+
+
+    string floatToStr2(float f) {
+        bool neg = false;
+        if (f < 0) { neg = true; f = 0 - f; }
+        int whole = 0;
+        while (whole + 1 <= f) { whole = whole + 1; }
+        float frac = f - whole;
+        frac = frac * 100;
+        int fracInt = 0;
+        while (fracInt + 1 <= frac) { fracInt = fracInt + 1; }
+        string fs = intToStr(fracInt);
+        while (fs.length < 2) { fs = "0" + fs; }
+        string result = intToStr(whole) + "." + fs;
+        if (neg) { result = "-" + result; }
+        return result;
+    }
+    void print() {
+        int i = 0;
+        while (i < rows) {
+            string line = "[ ";
+            int j = 0;
+            while (j < cols) {
+                string cell = floatToStr2(get(i, j));
+                while (cell.length < 8) { cell = " " + cell; }
+                line = line + cell;
+                if (j < cols - 1) { line = line + " "; }
+                j = j + 1;
+            }
+            line = line + " ]";
+            print(line);
+            i = i + 1;
+        }
+    }
+}

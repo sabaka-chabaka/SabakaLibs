@@ -1,0 +1,168 @@
+import "list.sabaka";
+
+int gcd(int a, int b) {
+    if (a < 0) { a = 0 - a; }
+    if (b < 0) { b = 0 - b; }
+    while (b != 0) {
+        int t = b;
+        b = a - (a / b) * b;
+        a = t;
+    }
+    return a;
+}
+
+int lcm(int a, int b) {
+    if (a == 0 || b == 0) { return 0; }
+    int g = gcd(a, b);
+    return (a / g) * b;
+}
+
+bool isPrime(int n) {
+    if (n < 2) { return false; }
+    if (n == 2) { return true; }
+    if (n - (n / 2) * 2 == 0) { return false; }
+    int i = 3;
+    bool running = true;
+    while (running) {
+        if (i * i > n) { running = false; }
+        else {
+            if (n - (n / i) * i == 0) { return false; }
+            i = i + 2;
+        }
+    }
+    return true;
+}
+
+List<int> factorize(int n) {
+    List<int> factors = new List<int>();
+    if (n < 2) { return factors; }
+    int d = 2;
+    while (d * d <= n) {
+        while (n - (n / d) * d == 0) {
+            factors.push_back(d);
+            n = n / d;
+        }
+        d = d + 1;
+    }
+    if (n > 1) { factors.push_back(n); }
+    return factors;
+}
+
+List<int> primesUpTo(int limit) {
+    List<int> result = new List<int>();
+    List<bool> sieve = new List<bool>();
+    int i = 0;
+    while (i <= limit) {
+        sieve.push_back(true);
+        i = i + 1;
+    }
+    sieve.values[0] = false;
+    if (limit >= 1) { sieve.values[1] = false; }
+    int p = 2;
+    while (p * p <= limit) {
+        if (sieve.values[p]) {
+            int m = p * p;
+            while (m <= limit) {
+                sieve.values[m] = false;
+                m = m + p;
+            }
+        }
+        p = p + 1;
+    }
+    i = 2;
+    while (i <= limit) {
+        if (sieve.values[i]) { result.push_back(i); }
+        i = i + 1;
+    }
+    return result;
+}
+
+int fibonacci(int n) {
+    if (n <= 0) { return 0; }
+    if (n == 1) { return 1; }
+    int a = 0;
+    int b = 1;
+    int i = 2;
+    while (i <= n) {
+        int c = a + b;
+        a = b;
+        b = c;
+        i = i + 1;
+    }
+    return b;
+}
+
+List<int> fibSequence(int count) {
+    List<int> result = new List<int>();
+    int a = 0;
+    int b = 1;
+    int i = 0;
+    while (i < count) {
+        result.push_back(a);
+        int c = a + b;
+        a = b;
+        b = c;
+        i = i + 1;
+    }
+    return result;
+}
+
+int factorial(int n) {
+    if (n <= 1) { return 1; }
+    int result = 1;
+    int i = 2;
+    while (i <= n) {
+        result = result * i;
+        i = i + 1;
+    }
+    return result;
+}
+
+int combinations(int n, int k) {
+    if (k > n) { return 0; }
+    if (k == 0 || k == n) { return 1; }
+    if (k > n - k) { k = n - k; }
+    int result = 1;
+    int i = 0;
+    while (i < k) {
+        result = result * (n - i);
+        result = result / (i + 1);
+        i = i + 1;
+    }
+    return result;
+}
+
+int permutations(int n, int k) {
+    if (k > n) { return 0; }
+    int result = 1;
+    int i = 0;
+    while (i < k) {
+        result = result * (n - i);
+        i = i + 1;
+    }
+    return result;
+}
+
+int powMod(int base, int exp, int mod) {
+    int result = 1;
+    base = base - (base / mod) * mod;
+    while (exp > 0) {
+        if (exp - (exp / 2) * 2 == 1) {
+            result = result * base - (result * base / mod) * mod;
+        }
+        exp = exp / 2;
+        base = base * base - (base * base / mod) * mod;
+    }
+    return result;
+}
+
+int clampInt(int v, int lo, int hi) {
+    if (v < lo) { return lo; }
+    if (v > hi) { return hi; }
+    return v;
+}
+
+int absInt(int v) {
+    if (v < 0) { return 0 - v; }
+    return v;
+}

@@ -1,0 +1,99 @@
+import "list.sabaka";
+
+int linearSearchInt(int[] arr, int len, int target) {
+    int i = 0;
+    while (i < len) {
+        if (arr[i] == target) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+int linearSearchStr(string[] arr, int len, string target) {
+    int i = 0;
+    while (i < len) {
+        if (arr[i] == target) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+int binarySearchInt(int[] arr, int len, int target) {
+    int lo = 0;
+    int hi = len - 1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (arr[mid] == target) { return mid; }
+        if (arr[mid] < target) {
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    return -1;
+}
+
+int binarySearchList(List<int> list, int target) {
+    int lo = 0;
+    int hi = list.values.length - 1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (list.values[mid] == target) { return mid; }
+        if (list.values[mid] < target) {
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    return -1;
+}
+
+int linearSearchList(List<int> list, int target) {
+    int i = 0;
+    while (i < list.values.length) {
+        if (list.values[i] == target) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+int linearSearchStrList(List<string> list, string target) {
+    int i = 0;
+    while (i < list.values.length) {
+        if (list.values[i] == target) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+int minIndex(int[] arr, int len) {
+    if (len == 0) { return -1; }
+    int minIdx = 0;
+    int i = 1;
+    while (i < len) {
+        if (arr[i] < arr[minIdx]) { minIdx = i; }
+        i = i + 1;
+    }
+    return minIdx;
+}
+
+int maxIndex(int[] arr, int len) {
+    if (len == 0) { return -1; }
+    int maxIdx = 0;
+    int i = 1;
+    while (i < len) {
+        if (arr[i] > arr[maxIdx]) { maxIdx = i; }
+        i = i + 1;
+    }
+    return maxIdx;
+}
+
+int countOccurrences(List<int> list, int target) {
+    int count = 0;
+    int i = 0;
+    while (i < list.values.length) {
+        if (list.values[i] == target) { count = count + 1; }
+        i = i + 1;
+    }
+    return count;
+}
