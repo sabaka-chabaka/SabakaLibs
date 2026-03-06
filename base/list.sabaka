@@ -33,5 +33,9 @@ class List<T>{
         values = [];
     }
 
+    T getValue(int index){
+        return values[index];
+    }
+
     void List() {}
 }
