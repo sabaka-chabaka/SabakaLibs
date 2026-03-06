@@ -1,8 +1,13 @@
-import "base/json.sabaka";
+import "base/string.sabaka";
 
-jsonInit();
+indexOf("hello world", "world")      // 6
+indexOfFrom("abcabc", "bc", 2)       // 4
+substring("hello", 1, 4)            // "ell"
+startsWith("hello", "he")           // true
+endsWith("hello", "lo")             // true
+trim("  hi  ")                      // "hi"
+replace("foo bar foo", "foo", "baz") // "baz bar baz"
+repeat("ab", 3)                     // "ababab"
 
-JsonObject obj = new JsonObject();
-obj.setString("name", "Alice");
-obj.setInt("age", 25);
-print(obj.build());
+List<string> parts = split("a,b,c", ",");
+parts.printLines(); // a / b / c

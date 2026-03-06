@@ -1,0 +1,177 @@
+int indexOf(string haystack, string needle) {
+    int hLen = haystack.length;
+    int nLen = needle.length;
+    if (nLen == 0) { return 0; }
+    if (nLen > hLen) { return -1; }
+    int i = 0;
+    while (i <= hLen - nLen) {
+        int j = 0;
+        bool match = true;
+        while (j < nLen) {
+            if (haystack[i + j] != needle[j]) {
+                match = false;
+                j = nLen;
+            } else {
+                j = j + 1;
+            }
+        }
+        if (match) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+int indexOfFrom(string haystack, string needle, int from) {
+    int hLen = haystack.length;
+    int nLen = needle.length;
+    if (nLen == 0) { return from; }
+    if (nLen > hLen) { return -1; }
+    int i = from;
+    while (i <= hLen - nLen) {
+        int j = 0;
+        bool match = true;
+        while (j < nLen) {
+            if (haystack[i + j] != needle[j]) {
+                match = false;
+                j = nLen;
+            } else {
+                j = j + 1;
+            }
+        }
+        if (match) { return i; }
+        i = i + 1;
+    }
+    return -1;
+}
+
+string substring(string s, int start, int end) {
+    string result = "";
+    int i = start;
+    while (i < end) {
+        result = result + s[i];
+        i = i + 1;
+    }
+    return result;
+}
+
+bool startsWith(string s, string prefix) {
+    if (prefix.length > s.length) { return false; }
+    int i = 0;
+    while (i < prefix.length) {
+        if (s[i] != prefix[i]) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+bool endsWith(string s, string suffix) {
+    if (suffix.length > s.length) { return false; }
+    int offset = s.length - suffix.length;
+    int i = 0;
+    while (i < suffix.length) {
+        if (s[offset + i] != suffix[i]) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+string trimLeft(string s) {
+    int i = 0;
+    bool running = true;
+    while (i < s.length && running) {
+        string c = s[i];
+        if (c == " ") {
+            i = i + 1;
+        } else {
+            running = false;
+        }
+    }
+    string result = "";
+    while (i < s.length) {
+        result = result + s[i];
+        i = i + 1;
+    }
+    return result;
+}
+
+string trimRight(string s) {
+    int i = s.length - 1;
+    bool running = true;
+    while (i >= 0 && running) {
+        string c = s[i];
+        if (c == " ") {
+            i = i - 1;
+        } else {
+            running = false;
+        }
+    }
+    string result = "";
+    int j = 0;
+    while (j <= i) {
+        result = result + s[j];
+        j = j + 1;
+    }
+    return result;
+}
+
+string trim(string s) {
+    return trimLeft(trimRight(s));
+}
+
+string replace(string s, string from, string to) {
+    string result = "";
+    int i = 0;
+    int fLen = from.length;
+    while (i < s.length) {
+        int found = indexOfFrom(s, from, i);
+        if (found == i) {
+            result = result + to;
+            i = i + fLen;
+        } else {
+            result = result + s[i];
+            i = i + 1;
+        }
+    }
+    return result;
+}
+
+bool strEquals(string a, string b) {
+    if (a.length != b.length) { return false; }
+    int i = 0;
+    while (i < a.length) {
+        if (a[i] != b[i]) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+string repeat(string s, int times) {
+    string result = "";
+    int i = 0;
+    while (i < times) {
+        result = result + s;
+        i = i + 1;
+    }
+    return result;
+}
+
+import "list.sabaka";
+
+List<string> split(string s, string delimiter) {
+    List<string> result = new List<string>();
+    int start = 0;
+    int dLen = delimiter.length;
+    int index = indexOfFrom(s, delimiter, start);
+    bool running = true;
+    while (running) {
+        if (index == -1) {
+            result.push_back(substring(s, start, s.length));
+            running = false;
+        } else {
+            result.push_back(substring(s, start, index));
+            start = index + dLen;
+            index = indexOfFrom(s, delimiter, start);
+        }
+    }
+    return result;
+}

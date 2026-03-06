@@ -1,0 +1,34 @@
+import "list.sabaka";
+
+class Stack<T> {
+    List<T> items = new List<T>();
+
+    void Stack() {}
+
+    void push(T value) {
+        items.push_back(value);
+    }
+
+    void pop() {
+        items.pop_back();
+    }
+
+    T peek() {
+        return items.values[items.values.length - 1];
+    }
+
+    bool isEmpty() {
+        if (items.values.length == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    int size() {
+        return items.values.length;
+    }
+
+    void clear() {
+        items.clear();
+    }
+}
