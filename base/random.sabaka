@@ -1,0 +1,48 @@
+class Random {
+    int seed = 0;
+
+    int mod(int a, int b) {
+        int result = a - (a / b) * b;
+        if (result < 0) {
+            result = result + b;
+        }
+        return result;
+    }
+
+    int randomInt() {
+        int a = 48271;
+        int m = 2147483647;
+        int q = 44488;
+        int r = 3399;
+        int hi = seed / q;
+        int lo = mod(seed, q);
+        seed = a * lo - r * hi;
+        if (seed < 0) {
+            seed = seed + m;
+        }
+        return seed;
+    }
+
+    void randomSeed(int s) {
+        seed = s;
+    }
+
+    void Random() {
+        seed = timeMs();
+        if (seed <= 0) {
+            seed = 12345;
+        }
+    }
+
+    int randomRange(int min, int max) {
+        int range = max - min + 1;
+        return mod(randomInt(), range) + min;
+    }
+
+    float randomFloat() {
+        int r = randomInt();
+        float result = r;
+        result = result / 2147483647;
+        return result;
+    }
+}
