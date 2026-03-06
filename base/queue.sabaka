@@ -1,0 +1,47 @@
+import "list.sabaka";
+
+class Queue<T> {
+    List<T> items = new List<T>();
+
+    void Queue() {}
+
+    void enqueue(T value) {
+        items.push_back(value);
+    }
+
+    void dequeue() {
+        if (items.values.length == 0) {
+            return;
+        }
+        List<T> newItems = new List<T>();
+        int i = 1;
+        while (i < items.values.length) {
+            newItems.push_back(items.values[i]);
+            i = i + 1;
+        }
+        items = newItems;
+    }
+
+    T front() {
+        return items.values[0];
+    }
+
+    T back() {
+        return items.values[items.values.length - 1];
+    }
+
+    bool isEmpty() {
+        if (items.values.length == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    int size() {
+        return items.values.length;
+    }
+
+    void clear() {
+        items.clear();
+    }
+}
