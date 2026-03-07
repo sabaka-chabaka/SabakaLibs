@@ -1,0 +1,244 @@
+import "heap.sabaka";
+
+
+void graphNeighbors(int v, int[] edges, int edgeCount, int[] out, int[] outCount) {
+    int count = 0;
+    int i = 0;
+    while (i < edgeCount) {
+        int from = edges[i * 2];
+        int to   = edges[i * 2 + 1];
+        if (from == v) { out[count] = to;   count = count + 1; }
+        if (to == v)   { out[count] = from; count = count + 1; }
+        i = i + 1;
+    }
+    outCount[0] = count;
+}
+
+void graphNeighborsDir(int v, int[] edges, int edgeCount, int[] out, int[] outCount) {
+    int count = 0;
+    int i = 0;
+    while (i < edgeCount) {
+        if (edges[i * 2] == v) {
+            out[count] = edges[i * 2 + 1];
+            count = count + 1;
+        }
+        i = i + 1;
+    }
+    outCount[0] = count;
+}
+
+void graphBFS(int start, int V, int[] edges, int edgeCount,
+              int[] visited, int[] order, int[] orderCount) {
+    int i = 0;
+    while (i < V) { visited[i] = 0; i = i + 1; }
+
+    int[] queue = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int head = 0;
+    int tail = 0;
+    int count = 0;
+
+    queue[tail] = start;
+    tail = tail + 1;
+    visited[start] = 1;
+
+    int[] nbrs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int[] nCount = [0];
+
+    while (head < tail) {
+        int v = queue[head];
+        head = head + 1;
+        order[count] = v;
+        count = count + 1;
+
+        graphNeighbors(v, edges, edgeCount, nbrs, nCount);
+        int j = 0;
+        while (j < nCount[0]) {
+            int nb = nbrs[j];
+            if (visited[nb] == 0) {
+                visited[nb] = 1;
+                queue[tail] = nb;
+                tail = tail + 1;
+            }
+            j = j + 1;
+        }
+    }
+    orderCount[0] = count;
+}
+
+void graphDFS(int start, int V, int[] edges, int edgeCount,
+              int[] visited, int[] order, int[] orderCount) {
+    int i = 0;
+    while (i < V) { visited[i] = 0; i = i + 1; }
+
+    int[] stack = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int top = 0;
+    int count = 0;
+
+    stack[top] = start;
+    top = top + 1;
+
+    int[] nbrs = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int[] nCount = [0];
+
+    while (top > 0) {
+        top = top - 1;
+        int v = stack[top];
+        if (visited[v] == 0) {
+            visited[v] = 1;
+            order[count] = v;
+            count = count + 1;
+
+            graphNeighbors(v, edges, edgeCount, nbrs, nCount);
+            int j = nCount[0] - 1;
+            while (j >= 0) {
+                if (visited[nbrs[j]] == 0) {
+                    stack[top] = nbrs[j];
+                    top = top + 1;
+                }
+                j = j - 1;
+            }
+        }
+    }
+    orderCount[0] = count;
+}
+
+void dijkstraPush(float[] pd, int[] pv, int[] sz, float d, int vert) {
+    int i = sz[0];
+    pd[i] = d;
+    pv[i] = vert;
+    sz[0] = i + 1;
+    while (i > 0) {
+        int parent = (i - 1) / 2;
+        if (pd[i] < pd[parent]) {
+            float td = pd[i]; pd[i] = pd[parent]; pd[parent] = td;
+            int   tv = pv[i]; pv[i] = pv[parent]; pv[parent] = tv;
+            i = parent;
+        } else {
+            i = 0;
+        }
+    }
+}
+
+int dijkstraPopVert(float[] pd, int[] pv, int[] sz) {
+    int result = pv[0];
+    sz[0] = sz[0] - 1;
+    pd[0] = pd[sz[0]];
+    pv[0] = pv[sz[0]];
+    int i = 0;
+    int n = sz[0];
+    bool running = true;
+    while (running) {
+        int left  = i * 2 + 1;
+        int right = i * 2 + 2;
+        int small = i;
+        if (left  < n && pd[left]  < pd[small]) { small = left; }
+        if (right < n && pd[right] < pd[small]) { small = right; }
+        if (small != i) {
+            float td = pd[i]; pd[i] = pd[small]; pd[small] = td;
+            int   tv = pv[i]; pv[i] = pv[small]; pv[small] = tv;
+            i = small;
+        } else {
+            running = false;
+        }
+    }
+    return result;
+}
+
+void graphDijkstra(int start, int V, int[] wedgeFrom, int[] wedgeTo, float[] wedgeW, int edgeCount,
+                   float[] dist, int[] prev) {
+    float INF = 1000000000.0;
+    int i = 0;
+    while (i < V) { dist[i] = INF; prev[i] = -1; i = i + 1; }
+    dist[start] = 0.0;
+
+    float[] pd = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    int[] pv  = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int[] sz  = [0];
+    dijkstraPush(pd, pv, sz, 0.0, start);
+
+    int[] visited = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    while (sz[0] > 0) {
+        int v = dijkstraPopVert(pd, pv, sz);
+        if (visited[v] == 0) {
+            visited[v] = 1;
+            int j = 0;
+            while (j < edgeCount) {
+                int from = wedgeFrom[j];
+                int to   = wedgeTo[j];
+                float w  = wedgeW[j];
+                int nb   = -1;
+                if (from == v) { nb = to; }
+                if (to   == v) { nb = from; }
+                if (nb >= 0 && visited[nb] == 0) {
+                    float newDist = dist[v] + w;
+                    if (newDist < dist[nb]) {
+                        dist[nb] = newDist;
+                        prev[nb] = v;
+                        dijkstraPush(pd, pv, sz, newDist, nb);
+                    }
+                }
+                j = j + 1;
+            }
+        }
+    }
+}
+
+void graphPath(int end, int[] prev, int[] path, int[] pathLen) {
+    int count = 0;
+    int v = end;
+    while (v != -1) {
+        path[count] = v;
+        count = count + 1;
+        v = prev[v];
+    }
+    pathLen[0] = count;
+}

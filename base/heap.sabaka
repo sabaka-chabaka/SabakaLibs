@@ -1,0 +1,98 @@
+void heapMinPush(float[] h, int[] heapSize, float val) {
+    int i = heapSize[0];
+    h[i] = val;
+    heapSize[0] = i + 1;
+    // Просеивание вверх
+    while (i > 0) {
+        int parent = (i - 1) / 2;
+        if (h[i] < h[parent]) {
+            float tmp = h[i];
+            h[i] = h[parent];
+            h[parent] = tmp;
+            i = parent;
+        } else {
+            i = 0;
+        }
+    }
+}
+
+float heapMinPop(float[] h, int[] heapSize) {
+    float result = h[0];
+    heapSize[0] = heapSize[0] - 1;
+    h[0] = h[heapSize[0]];
+    int i = 0;
+    int n = heapSize[0];
+    bool running = true;
+    while (running) {
+        int left  = i * 2 + 1;
+        int right = i * 2 + 2;
+        int smallest = i;
+        if (left < n && h[left] < h[smallest])   { smallest = left; }
+        if (right < n && h[right] < h[smallest])  { smallest = right; }
+        if (smallest != i) {
+            float tmp = h[i];
+            h[i] = h[smallest];
+            h[smallest] = tmp;
+            i = smallest;
+        } else {
+            running = false;
+        }
+    }
+    return result;
+}
+
+float heapMinPeek(float[] h) {
+    return h[0];
+}
+
+void heapMaxPush(float[] h, int[] heapSize, float val) {
+    int i = heapSize[0];
+    h[i] = val;
+    heapSize[0] = i + 1;
+    while (i > 0) {
+        int parent = (i - 1) / 2;
+        if (h[i] > h[parent]) {
+            float tmp = h[i];
+            h[i] = h[parent];
+            h[parent] = tmp;
+            i = parent;
+        } else {
+            i = 0;
+        }
+    }
+}
+
+float heapMaxPop(float[] h, int[] heapSize) {
+    float result = h[0];
+    heapSize[0] = heapSize[0] - 1;
+    h[0] = h[heapSize[0]];
+    int i = 0;
+    int n = heapSize[0];
+    bool running = true;
+    while (running) {
+        int left    = i * 2 + 1;
+        int right   = i * 2 + 2;
+        int largest = i;
+        if (left < n && h[left] > h[largest])   { largest = left; }
+        if (right < n && h[right] > h[largest])  { largest = right; }
+        if (largest != i) {
+            float tmp = h[i];
+            h[i] = h[largest];
+            h[largest] = tmp;
+            i = largest;
+        } else {
+            running = false;
+        }
+    }
+    return result;
+}
+
+float heapMaxPeek(float[] h) {
+    return h[0];
+}
+
+void pqPush(float[] h, int[] sz, float val) { heapMinPush(h, sz, val); }
+float pqPop(float[] h, int[] sz)            { return heapMinPop(h, sz); }
+float pqPeek(float[] h)                     { return heapMinPeek(h); }
+bool pqEmpty(int[] sz)                      { return sz[0] == 0; }
+int pqSize(int[] sz)                        { return sz[0]; }

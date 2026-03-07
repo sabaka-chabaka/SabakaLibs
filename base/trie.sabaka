@@ -1,0 +1,90 @@
+int TRIE_NODE_SIZE = 130;
+int TRIE_MAX_NODES = 500;
+
+void trieInit(int[] pool, int[] nodeCount) {
+    nodeCount[0] = 0;
+    int i = 0;
+    while (i < TRIE_NODE_SIZE) {
+        pool[i] = -1;
+        i = i + 1;
+    }
+    pool[128] = 0;
+    nodeCount[0] = 1;
+}
+
+int trieNewNode(int[] pool, int[] nodeCount) {
+    int idx = nodeCount[0];
+    int base = idx * TRIE_NODE_SIZE;
+    int i = 0;
+    while (i < TRIE_NODE_SIZE) {
+        pool[base + i] = -1;
+        i = i + 1;
+    }
+    pool[base + 128] = 0;
+    nodeCount[0] = idx + 1;
+    return idx;
+}
+
+void trieInsert(int[] pool, int[] nodeCount, string word) {
+    int node = 0;
+    int i = 0;
+    int n = word.length;
+    while (i < n) {
+        int c = ord(word[i]);
+        if (c < 0 || c > 127) { i = i + 1; }
+        else {
+            int base = node * TRIE_NODE_SIZE;
+            int child = pool[base + c];
+            if (child == -1) {
+                child = trieNewNode(pool, nodeCount);
+                pool[base + c] = child;
+            }
+            node = child;
+            i = i + 1;
+        }
+    }
+    pool[node * TRIE_NODE_SIZE + 128] = 1;
+}
+
+bool trieSearch(int[] pool, string word) {
+    int node = 0;
+    int i = 0;
+    int n = word.length;
+    while (i < n) {
+        int c = ord(word[i]);
+        if (c < 0 || c > 127) { return false; }
+        int child = pool[node * TRIE_NODE_SIZE + c];
+        if (child == -1) { return false; }
+        node = child;
+        i = i + 1;
+    }
+    return pool[node * TRIE_NODE_SIZE + 128] == 1;
+}
+
+bool trieStartsWith(int[] pool, string prefix) {
+    int node = 0;
+    int i = 0;
+    int n = prefix.length;
+    while (i < n) {
+        int c = ord(prefix[i]);
+        if (c < 0 || c > 127) { return false; }
+        int child = pool[node * TRIE_NODE_SIZE + c];
+        if (child == -1) { return false; }
+        node = child;
+        i = i + 1;
+    }
+    return true;
+}
+
+int trieCount(int[] pool, int[] nodeCount) {
+    int count = 0;
+    int i = 0;
+    int n = nodeCount[0];
+    while (i < n) {
+        if (pool[i * TRIE_NODE_SIZE + 128] == 1) {
+            count = count + 1;
+        }
+        i = i + 1;
+    }
+    return count;
+}
