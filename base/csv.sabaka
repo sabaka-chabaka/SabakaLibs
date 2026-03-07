@@ -1,0 +1,125 @@
+import "string.sabaka";
+import "list.sabaka";
+
+List<string> csvParseLine(string line, string sep) {
+    List<string> fields = new List<string>();
+    int i = 0;
+    int n = line.length;
+    string current = "";
+    bool inQuotes = false;
+
+    while (i < n) {
+        string c = line[i];
+
+        if (inQuotes) {
+            if (c == "\"") {
+                if (i + 1 < n && line[i + 1] == "\"") {
+                    current = current + "\"";
+                    i = i + 2;
+                } else {
+                    inQuotes = false;
+                    i = i + 1;
+                }
+            } else {
+                current = current + c;
+                i = i + 1;
+            }
+        } else {
+            if (c == "\"") {
+                inQuotes = true;
+                i = i + 1;
+            } else {
+                if (c == sep) {
+                    fields.push_back(current);
+                    current = "";
+                    i = i + 1;
+                } else {
+                    current = current + c;
+                    i = i + 1;
+                }
+            }
+        }
+    }
+    fields.push_back(current);
+    return fields;
+}
+
+List<string> csvParse(string line) {
+    return csvParseLine(line, ",");
+}
+
+string csvQuote(string field, string sep) {
+    bool needsQuotes = false;
+    int i = 0;
+    int n = field.length;
+    while (i < n) {
+        string c = field[i];
+        if (c == sep || c == "\"" || c == "\n" || c == "\r") {
+            needsQuotes = true;
+            i = n;
+        } else {
+            i = i + 1;
+        }
+    }
+    if (needsQuotes) {
+        return "\"" + replace(field, "\"", "\"\"") + "\"";
+    }
+    return field;
+}
+
+string csvBuildLine(List<string> fields, string sep) {
+    string result = "";
+    int i = 0;
+    int n = fields.values.length;
+    while (i < n) {
+        if (i > 0) { result = result + sep; }
+        result = result + csvQuote(fields.values[i], sep);
+        i = i + 1;
+    }
+    return result;
+}
+
+string csvBuild(List<string> fields) {
+    return csvBuildLine(fields, ",");
+}
+
+List<string> csvLines(string text) {
+    List<string> lines = new List<string>();
+    int i = 0;
+    int n = text.length;
+    string current = "";
+    while (i < n) {
+        string c = text[i];
+        if (c == "\r") {
+            i = i + 1;
+        } else {
+            if (c == "\n") {
+                lines.push_back(current);
+                current = "";
+                i = i + 1;
+            } else {
+                current = current + c;
+                i = i + 1;
+            }
+        }
+    }
+    if (current.length > 0) {
+        lines.push_back(current);
+    }
+    return lines;
+}
+
+string csvGet(List<string> header, List<string> row, string name) {
+    int i = 0;
+    int n = header.values.length;
+    while (i < n) {
+        if (header.values[i] == name) {
+            if (i < row.values.length) {
+                return row.values[i];
+            }
+            return "";
+        }
+        i = i + 1;
+    }
+    return "";
+}

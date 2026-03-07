@@ -1,0 +1,101 @@
+import "base/csv.sabaka";
+import "base/xml.sabaka";
+import "base/template.sabaka";
+
+print("=== csv.sabaka ===");
+
+// Парсинг строки
+List<string> row1 = csvParse("Alice,30,Engineer");
+print("поле 0: " + row1.values[0] + " (ожидается Alice)");
+print("поле 1: " + row1.values[1] + " (ожидается 30)");
+print("поле 2: " + row1.values[2] + " (ожидается Engineer)");
+
+// Кавычки
+List<string> row2 = csvParse("\"Иванов, Иван\",25,\"Москва\"");
+print("кавычки 0: " + row2.values[0] + " (ожидается Иванов, Иван)");
+print("кавычки 1: " + row2.values[1] + " (ожидается 25)");
+
+// Экранированные кавычки
+List<string> row3 = csvParse("\"он сказал \"\"привет\"\"\",test");
+print("эскейп: " + row3.values[0] + " (ожидается он сказал \"привет\")");
+
+// Сборка строки
+List<string> fields = new List<string>();
+fields.push_back("Bob");
+fields.push_back("42");
+fields.push_back("hello, world");
+string built = csvBuild(fields);
+print("build: " + built + " (ожидается Bob,42,\"hello, world\")");
+
+// Заголовки + csvGet
+List<string> header = csvParse("name,age,city");
+List<string> row4   = csvParse("Carol,28,Berlin");
+print("csvGet name: " + csvGet(header, row4, "name") + " (ожидается Carol)");
+print("csvGet city: " + csvGet(header, row4, "city") + " (ожидается Berlin)");
+print("csvGet miss: " + csvGet(header, row4, "email") + " (ожидается пусто)");
+
+// Многострочный текст
+string text = "a,b,c\n1,2,3\n4,5,6";
+List<string> lines = csvLines(text);
+print("csvLines count: " + lines.values.length + " (ожидается 3)");
+List<string> r0 = csvParse(lines.values[0]);
+List<string> r1 = csvParse(lines.values[1]);
+print("lines[1][0]: " + r1.values[0] + " (ожидается 1)");
+
+print("");
+print("=== xml.sabaka ===");
+
+// Простой тег
+List<string> n1 = xmlParseString("<name>Alice</name>");
+print("tag:  " + xmlTag(n1) + " (ожидается name)");
+print("text: " + xmlText(n1) + " (ожидается Alice)");
+
+// Атрибуты
+List<string> n2 = xmlParseString("<user id=\"42\" role=\"admin\">Bob</user>");
+print("attr id:   " + xmlGetAttr(n2, "id") + " (ожидается 42)");
+print("attr role: " + xmlGetAttr(n2, "role") + " (ожидается admin)");
+print("text:      " + xmlText(n2) + " (ожидается Bob)");
+
+// Self-closing
+List<string> n3 = xmlParseString("<br/>");
+print("self-close tag: " + xmlTag(n3) + " (ожидается br)");
+
+// XML сущности
+List<string> n4 = xmlParseString("<msg>1 &lt; 2 &amp; 3 &gt; 0</msg>");
+print("entities: " + xmlText(n4) + " (ожидается 1 < 2 & 3 > 0)");
+
+// Сборка узла
+List<string> n5 = xmlNode("item", "hello & world");
+xmlSetAttr(n5, "id", "1");
+print("toStr: " + xmlToString(n5));
+
+print("");
+print("=== template.sabaka ===");
+
+// Простая замена
+List<string> ctx = tmplNew();
+tmplSet(ctx, "name", "Alice");
+tmplSet(ctx, "age", "30");
+string out = tmplRender("Привет, {{name}}! Тебе {{age}} лет.", ctx);
+print(out + " (ожидается Привет, Alice! Тебе 30 лет.)");
+
+// Значение по умолчанию
+string out2 = tmplRender("Город: {{city|Неизвестно}}", ctx);
+print(out2 + " (ожидается Город: Неизвестно)");
+
+tmplSet(ctx, "city", "Москва");
+string out3 = tmplRender("Город: {{city|Неизвестно}}", ctx);
+print(out3 + " (ожидается Город: Москва)");
+
+// #if
+tmplSet(ctx, "admin", "true");
+string out4 = tmplRender("{{#if admin}}[ADMIN] {{/if}}{{name}}", ctx);
+print(out4 + " (ожидается [ADMIN] Alice)");
+
+// #unless
+string out5 = tmplRender("{{#unless guest}}Добро пожаловать{{/unless}}", ctx);
+print(out5 + " (ожидается Добро пожаловать)");
+
+// tmplOne
+string out6 = tmplOne("Hello, {{who}}!", "who", "World");
+print(out6 + " (ожидается Hello, World!)");

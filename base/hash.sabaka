@@ -1,0 +1,39 @@
+import "bits.sabaka";
+import "map.sabaka";
+
+int hashTrim(int h) {
+    if (h < 0) { h = h * -1; }
+    return bitAnd(h, 1073741823);
+}
+
+int djb2(string s) {
+    int h = 5381;
+    int i = 0;
+    int n = s.length;
+    while (i < n) {
+        h = hashTrim(h * 33 + ord(s[i]));
+        i = i + 1;
+    }
+    return h;
+}
+
+int hashStr(string s) {
+    int h = 0;
+    int i = 0;
+    int n = s.length;
+    while (i < n) {
+        h = hashTrim(h * 31 + ord(s[i]));
+        i = i + 1;
+    }
+    return h;
+}
+
+bool hashEqual(int a, int b) {
+    return a == b;
+}
+
+
+Map<string, string> htNew() {
+    Map<string, string> m = new Map<string, string>();
+    return m;
+}

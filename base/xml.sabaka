@@ -1,0 +1,272 @@
+import "string.sabaka";
+import "list.sabaka";
+
+List<string> xmlNode(string tag, string text) {
+    List<string> node = new List<string>();
+    node.push_back(tag);
+    node.push_back(text);
+    node.push_back("#end");
+    return node;
+}
+
+string xmlTag(List<string> node) {
+    return node.values[0];
+}
+
+string xmlText(List<string> node) {
+    return node.values[1];
+}
+
+void xmlSetText(List<string> node, string text) {
+    node.values[1] = text;
+}
+
+void xmlSetAttr(List<string> node, string key, string val) {
+    int i = 2;
+    int n = node.values.length;
+    while (i < n) {
+        if (node.values[i] == "#end") {
+            i = n;
+        } else {
+            if (node.values[i] == key) {
+                node.values[i + 1] = val;
+                return;
+            }
+            i = i + 2;
+        }
+    }
+    int end = n - 1;
+    node.push_back("#end");
+    node.values[end] = key;
+    node.values[end + 1] = val;
+    node.values[end + 2] = "#end";
+}
+
+string xmlGetAttr(List<string> node, string key) {
+    int i = 2;
+    int n = node.values.length;
+    while (i < n) {
+        if (node.values[i] == "#end") { return ""; }
+        if (node.values[i] == key) { return node.values[i + 1]; }
+        i = i + 2;
+    }
+    return "";
+}
+
+int xmlSkipWs(string s, int i) {
+    int n = s.length;
+    while (i < n) {
+        string c = s[i];
+        if (c == " " || c == "\t" || c == "\n" || c == "\r") {
+            i = i + 1;
+        } else {
+            return i;
+        }
+    }
+    return i;
+}
+
+string xmlReadIdent(string s, int i, int[] outEnd) {
+    int n = s.length;
+    string result = "";
+    while (i < n) {
+        string c = s[i];
+        if (c == " " || c == "\t" || c == "\n" || c == "\r" ||
+            c == ">" || c == "/" || c == "=" || c == "<") {
+            outEnd[0] = i;
+            return result;
+        }
+        result = result + c;
+        i = i + 1;
+    }
+    outEnd[0] = i;
+    return result;
+}
+
+string xmlReadValue(string s, int i, int[] outEnd) {
+    int n = s.length;
+    string result = "";
+    string quote = s[i];
+    i = i + 1;
+    while (i < n) {
+        string c = s[i];
+        if (c == quote) {
+            outEnd[0] = i + 1;
+            return result;
+        }
+        if (c == "&") {
+            int semi = indexOfFrom(s, ";", i);
+            if (semi > i) {
+                string ent = substring(s, i, semi + 1);
+                if (ent == "&amp;")  { result = result + "&"; }
+                if (ent == "&lt;")   { result = result + "<"; }
+                if (ent == "&gt;")   { result = result + ">"; }
+                if (ent == "&quot;") { result = result + "\""; }
+                if (ent == "&apos;") { result = result + "'"; }
+                i = semi + 1;
+            } else {
+                result = result + c;
+                i = i + 1;
+            }
+        } else {
+            result = result + c;
+            i = i + 1;
+        }
+    }
+    outEnd[0] = i;
+    return result;
+}
+
+string xmlDecodeText(string s) {
+    string result = replace(s, "&amp;",  "&");
+    result = replace(result, "&lt;",   "<");
+    result = replace(result, "&gt;",   ">");
+    result = replace(result, "&quot;", "\"");
+    result = replace(result, "&apos;", "'");
+    return result;
+}
+
+string xmlEncodeText(string s) {
+    string result = replace(s, "&", "&amp;");
+    result = replace(result, "<", "&lt;");
+    result = replace(result, ">", "&gt;");
+    return result;
+}
+
+List<string> xmlParseOpenTag(string s, int i, int[] outEnd, int[] isSelfClosing) {
+    int[] end = [0];
+    string tag = xmlReadIdent(s, i, end);
+    i = end[0];
+    List<string> node = xmlNode(tag, "");
+    isSelfClosing[0] = 0;
+    int n = s.length;
+
+    while (i < n) {
+        i = xmlSkipWs(s, i);
+        if (i >= n) { outEnd[0] = i; return node; }
+        string c = s[i];
+        if (c == ">") { outEnd[0] = i + 1; return node; }
+        if (c == "/") {
+            isSelfClosing[0] = 1;
+            outEnd[0] = i + 2;
+            return node;
+        }
+        string attrKey = xmlReadIdent(s, i, end);
+        i = end[0];
+        i = xmlSkipWs(s, i);
+        string attrVal = "";
+        if (i < n && s[i] == "=") {
+            i = i + 1;
+            i = xmlSkipWs(s, i);
+            if (i < n && (s[i] == "\"" || s[i] == "'")) {
+                attrVal = xmlReadValue(s, i, end);
+                i = end[0];
+            }
+        }
+        if (attrKey.length > 0) {
+            xmlSetAttr(node, attrKey, attrVal);
+        }
+    }
+    outEnd[0] = i;
+    return node;
+}
+
+List<string> xmlParse(string s, int i, int[] outEnd) {
+    int n = s.length;
+    i = indexOfFrom(s, "<", i);
+    if (i < 0) { outEnd[0] = n; return xmlNode("", ""); }
+
+    while (i < n && i >= 0) {
+        if (i + 1 < n && s[i + 1] == "?") {
+            int end2 = indexOfFrom(s, "?>", i);
+            if (end2 < 0) { outEnd[0] = n; return xmlNode("", ""); }
+            i = indexOfFrom(s, "<", end2 + 2);
+            if (i < 0) { outEnd[0] = n; return xmlNode("", ""); }
+        } else {
+            if (i + 3 < n && s[i+1] == "!" && s[i+2] == "-" && s[i+3] == "-") {
+                int end2 = indexOfFrom(s, "-->", i);
+                if (end2 < 0) { outEnd[0] = n; return xmlNode("", ""); }
+                i = indexOfFrom(s, "<", end2 + 3);
+                if (i < 0) { outEnd[0] = n; return xmlNode("", ""); }
+            } else {
+                i = i + 1;
+            }
+        }
+        if (i >= 0 && i < n) {
+            string next = s[i];
+            if (next == "<") {
+                if (i + 1 < n && s[i+1] != "?" && s[i+1] != "!") {
+                    i = i + 1;
+                    bool done = true;
+                    done = false;
+                }
+            }
+        }
+        i = n; 
+    }
+
+    i = indexOfFrom(s, "<", 0);
+    while (i >= 0 && i < n) {
+        if (i + 1 < n) {
+            string next = s[i + 1];
+            if (next != "?" && next != "!" && next != "/") {
+                i = i + 1;
+                int[] end = [0];
+                int[] selfClose = [0];
+                List<string> node = xmlParseOpenTag(s, i, end, selfClose);
+                i = end[0];
+                if (selfClose[0] == 1) {
+                    outEnd[0] = i;
+                    return node;
+                }
+                string content = "";
+                string closeTag = "</" + xmlTag(node) + ">";
+                int closePos = indexOfFrom(s, closeTag, i);
+                if (closePos < 0) {
+                    outEnd[0] = n;
+                    xmlSetText(node, xmlDecodeText(trim(substring(s, i, n))));
+                    return node;
+                }
+                content = substring(s, i, closePos);
+                xmlSetText(node, xmlDecodeText(trim(content)));
+                outEnd[0] = closePos + closeTag.length;
+                return node;
+            }
+        }
+        int nextLt = indexOfFrom(s, "<", i + 1);
+        if (nextLt < 0) { outEnd[0] = n; return xmlNode("", ""); }
+        i = nextLt;
+    }
+    outEnd[0] = n;
+    return xmlNode("", "");
+}
+
+List<string> xmlParseString(string s) {
+    int[] end = [0];
+    return xmlParse(s, 0, end);
+}
+
+string xmlToString(List<string> node) {
+    string tag = xmlTag(node);
+    if (tag.length == 0) { return ""; }
+
+    string result = "<" + tag;
+
+    int i = 2;
+    int n = node.values.length;
+    while (i < n) {
+        if (node.values[i] == "#end") { i = n; }
+        else {
+            result = result + " " + node.values[i] + "=\"" + xmlEncodeText(node.values[i+1]) + "\"";
+            i = i + 2;
+        }
+    }
+
+    string text = xmlText(node);
+    if (text.length == 0) {
+        result = result + "/>";
+    } else {
+        result = result + ">" + xmlEncodeText(text) + "</" + tag + ">";
+    }
+    return result;
+}

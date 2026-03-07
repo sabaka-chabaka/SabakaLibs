@@ -1,0 +1,212 @@
+import "math.sabaka";
+import "sort.sabaka";
+
+float statSum(float[] data, int n) {
+    float s = 0.0;
+    int i = 0;
+    while (i < n) {
+        s = s + data[i];
+        i = i + 1;
+    }
+    return s;
+}
+
+float statMean(float[] data, int n) {
+    if (n == 0) { return 0.0; }
+    return statSum(data, n) / n;
+}
+
+float statMin(float[] data, int n) {
+    if (n == 0) { return 0.0; }
+    float m = data[0];
+    int i = 1;
+    while (i < n) {
+        if (data[i] < m) { m = data[i]; }
+        i = i + 1;
+    }
+    return m;
+}
+
+float statMax(float[] data, int n) {
+    if (n == 0) { return 0.0; }
+    float m = data[0];
+    int i = 1;
+    while (i < n) {
+        if (data[i] > m) { m = data[i]; }
+        i = i + 1;
+    }
+    return m;
+}
+
+float statRange(float[] data, int n) {
+    return statMax(data, n) - statMin(data, n);
+}
+
+float statMedian(float[] data, int n) {
+    if (n == 0) { return 0.0; }
+    float[] s = data;
+    sortFloats(s, n);
+    int mid = n / 2;
+    // нечётное количество
+    if (n - (n / 2) * 2 == 1) {
+        return s[mid];
+    }
+    return (s[mid - 1] + s[mid]) / 2.0;
+}
+
+float statMode(float[] data, int n) {
+    if (n == 0) { return 0.0; }
+    float bestVal = data[0];
+    int bestCount = 0;
+    int i = 0;
+    while (i < n) {
+        float v = data[i];
+        int count = 0;
+        int j = 0;
+        while (j < n) {
+            if (data[j] == v) { count = count + 1; }
+            j = j + 1;
+        }
+        if (count > bestCount) {
+            bestCount = count;
+            bestVal = v;
+        }
+        i = i + 1;
+    }
+    return bestVal;
+}
+
+float statVariance(float[] data, int n) {
+    if (n == 0) { return 0.0; }
+    float mean = statMean(data, n);
+    float sum = 0.0;
+    int i = 0;
+    while (i < n) {
+        float d = data[i] - mean;
+        sum = sum + d * d;
+        i = i + 1;
+    }
+    return sum / n;
+}
+
+float statVarianceSample(float[] data, int n) {
+    if (n <= 1) { return 0.0; }
+    float mean = statMean(data, n);
+    float sum = 0.0;
+    int i = 0;
+    while (i < n) {
+        float d = data[i] - mean;
+        sum = sum + d * d;
+        i = i + 1;
+    }
+    return sum / (n - 1);
+}
+
+float statStdDev(float[] data, int n) {
+    return sqrt(statVariance(data, n));
+}
+
+float statStdDevSample(float[] data, int n) {
+    return sqrt(statVarianceSample(data, n));
+}
+
+float statQuantile(float[] data, int n, float p) {
+    if (n == 0) { return 0.0; }
+    float[] s = data;
+    sortFloats(s, n);
+    float pos = p * (n - 1);
+    int lo = floor(pos);
+    int hi = lo + 1;
+    if (hi >= n) { return s[n - 1]; }
+    float frac = pos - lo;
+    return s[lo] + frac * (s[hi] - s[lo]);
+}
+
+float statQ1(float[] data, int n)  { return statQuantile(data, n, 0.25); }
+float statQ3(float[] data, int n)  { return statQuantile(data, n, 0.75); }
+float statIQR(float[] data, int n) { return statQ3(data, n) - statQ1(data, n); }
+
+float statCorrelation(float[] x, float[] y, int n) {
+    if (n == 0) { return 0.0; }
+    float mx = statMean(x, n);
+    float my = statMean(y, n);
+    float num = 0.0;
+    float dx2 = 0.0;
+    float dy2 = 0.0;
+    int i = 0;
+    while (i < n) {
+        float ex = x[i] - mx;
+        float ey = y[i] - my;
+        num = num + ex * ey;
+        dx2 = dx2 + ex * ex;
+        dy2 = dy2 + ey * ey;
+        i = i + 1;
+    }
+    float denom = sqrt(dx2 * dy2);
+    if (denom == 0.0) { return 0.0; }
+    return num / denom;
+}
+
+void statLinReg(float[] x, float[] y, int n, float[] out) {
+    out[0] = 0.0;
+    out[1] = 0.0;
+    if (n < 2) { return; }
+    float mx = statMean(x, n);
+    float my = statMean(y, n);
+    float num = 0.0;
+    float den = 0.0;
+    int i = 0;
+    while (i < n) {
+        float ex = x[i] - mx;
+        num = num + ex * (y[i] - my);
+        den = den + ex * ex;
+        i = i + 1;
+    }
+    if (den != 0.0) { out[0] = num / den; }
+    out[1] = my - out[0] * mx;
+}
+
+float statPredict(float[] reg, float x) {
+    return reg[0] * x + reg[1];
+}
+
+void statNormalize(float[] data, int n, float[] out) {
+    float mn = statMin(data, n);
+    float mx = statMax(data, n);
+    float r = mx - mn;
+    int i = 0;
+    if (r == 0.0) {
+        while (i < n) { out[i] = 0.0; i = i + 1; }
+        return;
+    }
+    while (i < n) {
+        out[i] = (data[i] - mn) / r;
+        i = i + 1;
+    }
+}
+
+void statZScore(float[] data, int n, float[] out) {
+    float mean = statMean(data, n);
+    float sd = statStdDev(data, n);
+    int i = 0;
+    if (sd == 0.0) {
+        while (i < n) { out[i] = 0.0; i = i + 1; }
+        return;
+    }
+    while (i < n) {
+        out[i] = (data[i] - mean) / sd;
+        i = i + 1;
+    }
+}
+
+void statSummary(float[] data, int n) {
+    print("n      = " + n);
+    print("min    = " + statMin(data, n));
+    print("max    = " + statMax(data, n));
+    print("mean   = " + statMean(data, n));
+    print("median = " + statMedian(data, n));
+    print("std    = " + statStdDev(data, n));
+    print("Q1     = " + statQ1(data, n));
+    print("Q3     = " + statQ3(data, n));
+    print("IQR    = " + statIQR(data, n));
+}

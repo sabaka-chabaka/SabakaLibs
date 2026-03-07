@@ -1,0 +1,115 @@
+import "string.sabaka";
+import "list.sabaka";
+
+List<string> tmplNew() {
+    List<string> ctx = new List<string>();
+    return ctx;
+}
+
+void tmplSet(List<string> ctx, string key, string value) {
+    int i = 0;
+    int n = ctx.values.length;
+    while (i < n) {
+        if (ctx.values[i] == key) {
+            ctx.values[i + 1] = value;
+            return;
+        }
+        i = i + 2;
+    }
+    ctx.push_back(key);
+    ctx.push_back(value);
+}
+
+string tmplGet(List<string> ctx, string key) {
+    int i = 0;
+    int n = ctx.values.length;
+    while (i < n) {
+        if (ctx.values[i] == key) { return ctx.values[i + 1]; }
+        i = i + 2;
+    }
+    return "";
+}
+
+bool tmplHas(List<string> ctx, string key) {
+    int i = 0;
+    int n = ctx.values.length;
+    while (i < n) {
+        if (ctx.values[i] == key) { return true; }
+        i = i + 2;
+    }
+    return false;
+}
+
+string tmplRender(string tmpl, List<string> ctx) {
+    string result = "";
+    int i = 0;
+    int n = tmpl.length;
+
+    while (i < n) {
+        if (i + 1 < n && tmpl[i] == "{" && tmpl[i+1] == "{") {
+            int close = indexOfFrom(tmpl, "}}", i + 2);
+            if (close < 0) {
+                result = result + tmpl[i];
+                i = i + 1;
+            } else {
+                string expr = trim(substring(tmpl, i + 2, close));
+
+                if (startsWith(expr, "#if ")) {
+                    string varName = trim(substring(expr, 4, expr.length));
+                    string endTag = "{{/if}}";
+                    int endPos = indexOfFrom(tmpl, endTag, close + 2);
+                    if (endPos < 0) {
+                        i = close + 2;
+                    } else {
+                        string inner = substring(tmpl, close + 2, endPos);
+                        string val = tmplGet(ctx, varName);
+                        if (tmplHas(ctx, varName) && val.length > 0) {
+                            result = result + tmplRender(inner, ctx);
+                        }
+                        i = endPos + endTag.length;
+                    }
+                } else {
+                    if (startsWith(expr, "#unless ")) {
+                        string varName = trim(substring(expr, 8, expr.length));
+                        string endTag = "{{/unless}}";
+                        int endPos = indexOfFrom(tmpl, endTag, close + 2);
+                        if (endPos < 0) {
+                            i = close + 2;
+                        } else {
+                            string inner = substring(tmpl, close + 2, endPos);
+                            string val = tmplGet(ctx, varName);
+                            if (!tmplHas(ctx, varName) || val.length == 0) {
+                                result = result + tmplRender(inner, ctx);
+                            }
+                            i = endPos + endTag.length;
+                        }
+                    } else {
+                        int pipePos = indexOf(expr, "|");
+                        string varName = expr;
+                        string defaultVal = "";
+                        if (pipePos >= 0) {
+                            varName = trim(substring(expr, 0, pipePos));
+                            defaultVal = trim(substring(expr, pipePos + 1, expr.length));
+                        }
+                        string val = tmplGet(ctx, varName);
+                        if (val.length == 0 && defaultVal.length > 0) {
+                            val = defaultVal;
+                        }
+                        result = result + val;
+                        i = close + 2;
+                    }
+                }
+            }
+        } else {
+            result = result + tmpl[i];
+            i = i + 1;
+        }
+    }
+    return result;
+}
+
+string tmplOne(string tmpl, string key, string value) {
+    List<string> ctx = tmplNew();
+    tmplSet(ctx, key, value);
+    return tmplRender(tmpl, ctx);
+}
