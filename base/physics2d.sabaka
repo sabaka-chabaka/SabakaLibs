@@ -1,0 +1,363 @@
+// physics2d.sabaka
+// 2D физика: тела, силы, интеграция Эйлера, коллизии AABB и окружностей
+// Зависимости: math.sabaka
+
+import "math.sabaka";
+
+// ── Вектор 2D ─────────────────────────────────────────────────────────────────
+// Хранится как float[2]: [x, y]
+
+void vec2Set(float[] v, float x, float y) { v[0] = x; v[1] = y; }
+float vec2X(float[] v) { return v[0]; }
+float vec2Y(float[] v) { return v[1]; }
+
+void vec2Add(float[] a, float[] b, float[] out) {
+    out[0] = a[0] + b[0];
+    out[1] = a[1] + b[1];
+}
+
+void vec2Sub(float[] a, float[] b, float[] out) {
+    out[0] = a[0] - b[0];
+    out[1] = a[1] - b[1];
+}
+
+void vec2Scale(float[] v, float s, float[] out) {
+    out[0] = v[0] * s;
+    out[1] = v[1] * s;
+}
+
+float vec2Dot(float[] a, float[] b) {
+    return a[0] * b[0] + a[1] * b[1];
+}
+
+float vec2Len(float[] v) {
+    return sqrt(v[0] * v[0] + v[1] * v[1]);
+}
+
+float vec2LenSq(float[] v) {
+    return v[0] * v[0] + v[1] * v[1];
+}
+
+void vec2Norm(float[] v, float[] out) {
+    float len = vec2Len(v);
+    if (len == 0.0) { out[0] = 0.0; out[1] = 0.0; return; }
+    out[0] = v[0] / len;
+    out[1] = v[1] / len;
+}
+
+void vec2Copy(float[] src, float[] dst) {
+    dst[0] = src[0];
+    dst[1] = src[1];
+}
+
+// ── Тело (Body) ───────────────────────────────────────────────────────────────
+// Хранится как float[16]:
+//  [0,1]  = position x,y
+//  [2,3]  = velocity x,y
+//  [4,5]  = acceleration x,y (сброс после каждого шага)
+//  [6,7]  = force accumulator x,y
+//  [8]    = mass
+//  [9]    = inv_mass (0 = статичное тело)
+//  [10]   = restitution (упругость: 0=пластик, 1=идеальный)
+//  [11]   = friction
+//  [12]   = shape: 0=AABB, 1=circle
+//  [13]   = half-width (AABB) или radius (circle)
+//  [14]   = half-height (AABB, не используется для circle)
+//  [15]   = active (1=активно)
+
+int BODY_SIZE = 16;
+
+void bodyInit(float[] b, float x, float y, float mass,
+              float restitution, float friction,
+              int shape, float hw, float hh) {
+    b[0]  = x;
+    b[1]  = y;
+    b[2]  = 0.0;  // vx
+    b[3]  = 0.0;  // vy
+    b[4]  = 0.0;  // ax
+    b[5]  = 0.0;  // ay
+    b[6]  = 0.0;  // fx
+    b[7]  = 0.0;  // fy
+    b[8]  = mass;
+    if (mass == 0.0) { b[9] = 0.0; } else { b[9] = 1.0 / mass; }
+    b[10] = restitution;
+    b[11] = friction;
+    b[12] = shape;
+    b[13] = hw;
+    b[14] = hh;
+    b[15] = 1.0;
+}
+
+// Добавить силу к телу
+void bodyApplyForce(float[] b, float fx, float fy) {
+    b[6] = b[6] + fx;
+    b[7] = b[7] + fy;
+}
+
+// Добавить импульс (мгновенное изменение скорости)
+void bodyApplyImpulse(float[] b, float ix, float iy) {
+    b[2] = b[2] + ix * b[9];
+    b[3] = b[3] + iy * b[9];
+}
+
+// Интеграция Эйлера: обновить позицию и скорость за шаг dt
+void bodyStep(float[] b, float dt, float gravX, float gravY) {
+    if (b[9] == 0.0) { return; } // статичное тело
+
+    // Применить накопленные силы + гравитацию
+    float ax = (b[6] + gravX * b[8]) * b[9];
+    float ay = (b[7] + gravY * b[8]) * b[9];
+
+    // Обновить скорость
+    b[2] = b[2] + ax * dt;
+    b[3] = b[3] + ay * dt;
+
+    // Обновить позицию
+    b[0] = b[0] + b[2] * dt;
+    b[1] = b[1] + b[3] * dt;
+
+    // Сброс сил
+    b[6] = 0.0;
+    b[7] = 0.0;
+}
+
+// ── Коллизии ─────────────────────────────────────────────────────────────────
+
+// AABB vs AABB
+// Возвращает 1 если пересекаются, заполняет nx,ny,depth (нормаль и глубина)
+int collideAABB(float[] a, float[] b, float[] out) {
+    // out[0]=nx, out[1]=ny, out[2]=depth
+    float ax = a[0]; float ay = a[1];
+    float bx = b[0]; float by = b[1];
+    float ahw = a[13]; float ahh = a[14];
+    float bhw = b[13]; float bhh = b[14];
+
+    float dx = bx - ax;
+    float dy = by - ay;
+    float ox = (ahw + bhw) - abs(dx);
+    float oy = (ahh + bhh) - abs(dy);
+
+    if (ox <= 0.0 || oy <= 0.0) { return 0; }
+
+    if (ox < oy) {
+        float sign = 1.0;
+        if (dx < 0.0) { sign = -1.0; }
+        out[0] = sign;
+        out[1] = 0.0;
+        out[2] = ox;
+    } else {
+        float sign = 1.0;
+        if (dy < 0.0) { sign = -1.0; }
+        out[0] = 0.0;
+        out[1] = sign;
+        out[2] = oy;
+    }
+    return 1;
+}
+
+// Circle vs Circle
+int collideCircle(float[] a, float[] b, float[] out) {
+    float dx = b[0] - a[0];
+    float dy = b[1] - a[1];
+    float distSq = dx * dx + dy * dy;
+    float rSum = a[13] + b[13];
+    if (distSq >= rSum * rSum) { return 0; }
+
+    float dist = sqrt(distSq);
+    if (dist == 0.0) {
+        out[0] = 1.0; out[1] = 0.0; out[2] = rSum;
+    } else {
+        out[0] = dx / dist;
+        out[1] = dy / dist;
+        out[2] = rSum - dist;
+    }
+    return 1;
+}
+
+// Circle vs AABB
+int collideCircleAABB(float[] circle, float[] box, float[] out) {
+    float cx = circle[0]; float cy = circle[1]; float r = circle[13];
+    float bx = box[0];    float by = box[1];
+    float hw = box[13];   float hh = box[14];
+
+    // Ближайшая точка AABB к центру круга
+    float clampX = cx;
+    if (clampX < bx - hw) { clampX = bx - hw; }
+    if (clampX > bx + hw) { clampX = bx + hw; }
+    float clampY = cy;
+    if (clampY < by - hh) { clampY = by - hh; }
+    if (clampY > by + hh) { clampY = by + hh; }
+
+    float dx = cx - clampX;
+    float dy = cy - clampY;
+    float distSq = dx * dx + dy * dy;
+    if (distSq >= r * r) { return 0; }
+
+    float dist = sqrt(distSq);
+    if (dist == 0.0) {
+        out[0] = 1.0; out[1] = 0.0; out[2] = r;
+    } else {
+        out[0] = dx / dist;
+        out[1] = dy / dist;
+        out[2] = r - dist;
+    }
+    return 1;
+}
+
+// ── Разрешение коллизии ───────────────────────────────────────────────────────
+// Применяет импульс и коррекцию позиции для двух тел
+
+void resolveCollision(float[] a, float[] b, float[] manifold) {
+    float nx = manifold[0];
+    float ny = manifold[1];
+    float depth = manifold[2];
+
+    // Относительная скорость
+    float rvx = b[2] - a[2];
+    float rvy = b[3] - a[3];
+    float velAlongNormal = rvx * nx + rvy * ny;
+
+    // Не разрешать если тела расходятся
+    if (velAlongNormal > 0.0) { return; }
+
+    float e = a[10];
+    if (b[10] < e) { e = b[10]; }
+
+    float j = -(1.0 + e) * velAlongNormal;
+    float invMassSum = a[9] + b[9];
+    if (invMassSum == 0.0) { return; }
+    j = j / invMassSum;
+
+    // Применить импульс
+    bodyApplyImpulse(a, nx * j * -1.0, ny * j * -1.0);
+    bodyApplyImpulse(b, nx * j,        ny * j);
+
+    // Коррекция позиции (sink correction)
+    float percent = 0.2;
+    float slop    = 0.01;
+    float corrMag = depth - slop;
+    if (corrMag < 0.0) { corrMag = 0.0; }
+    corrMag = corrMag / invMassSum * percent;
+
+    a[0] = a[0] - nx * corrMag * a[9];
+    a[1] = a[1] - ny * corrMag * a[9];
+    b[0] = b[0] + nx * corrMag * b[9];
+    b[1] = b[1] + ny * corrMag * b[9];
+}
+
+// ── Мир ───────────────────────────────────────────────────────────────────────
+// Хранится как float[] bodies: каждое тело занимает BODY_SIZE float
+// nBodies[0] — количество тел
+
+// Добавить тело в мир, вернуть его индекс
+int worldAddBody(float[] bodies, int[] nBodies,
+                 float x, float y, float mass,
+                 float restitution, float friction,
+                 int shape, float hw, float hh) {
+    int idx = nBodies[0];
+    int base = idx * BODY_SIZE;
+    bodies[base + 0]  = x;
+    bodies[base + 1]  = y;
+    bodies[base + 2]  = 0.0;
+    bodies[base + 3]  = 0.0;
+    bodies[base + 4]  = 0.0;
+    bodies[base + 5]  = 0.0;
+    bodies[base + 6]  = 0.0;
+    bodies[base + 7]  = 0.0;
+    bodies[base + 8]  = mass;
+    if (mass == 0.0) { bodies[base + 9] = 0.0; } else { bodies[base + 9] = 1.0 / mass; }
+    bodies[base + 10] = restitution;
+    bodies[base + 11] = friction;
+    bodies[base + 12] = shape;
+    bodies[base + 13] = hw;
+    bodies[base + 14] = hh;
+    bodies[base + 15] = 1.0;
+    nBodies[0] = idx + 1;
+    return idx;
+}
+
+// Получить указатель (base offset) для тела по индексу
+int worldBodyBase(int idx) {
+    return idx * BODY_SIZE;
+}
+
+// Шаг симуляции мира
+void worldStep(float[] bodies, int nBodies, float dt, float gravX, float gravY) {
+    float[] manifold = [0.0, 0.0, 0.0];
+
+    // Интегрировать тела
+    int i = 0;
+    while (i < nBodies) {
+        int base = i * BODY_SIZE;
+        if (bodies[base + 15] == 1.0) {
+            // Inline bodyStep с offset
+            if (bodies[base + 9] != 0.0) {
+                float ax = (bodies[base + 6] + gravX * bodies[base + 8]) * bodies[base + 9];
+                float ay = (bodies[base + 7] + gravY * bodies[base + 8]) * bodies[base + 9];
+                bodies[base + 2] = bodies[base + 2] + ax * dt;
+                bodies[base + 3] = bodies[base + 3] + ay * dt;
+                bodies[base + 0] = bodies[base + 0] + bodies[base + 2] * dt;
+                bodies[base + 1] = bodies[base + 1] + bodies[base + 3] * dt;
+                bodies[base + 6] = 0.0;
+                bodies[base + 7] = 0.0;
+            }
+        }
+        i = i + 1;
+    }
+
+    // Обнаружить и разрешить коллизии
+    i = 0;
+    while (i < nBodies) {
+        int j = i + 1;
+        while (j < nBodies) {
+            int bi = i * BODY_SIZE;
+            int bj = j * BODY_SIZE;
+
+            if (bodies[bi + 15] == 0.0 || bodies[bj + 15] == 0.0) {
+                j = j + 1;
+            } else {
+                int shapeI = floor(bodies[bi + 12]);
+                int shapeJ = floor(bodies[bj + 12]);
+                int hit = 0;
+
+                // Временные массивы для передачи в функции коллизий
+                float[] bodyI = [bodies[bi+0],  bodies[bi+1],  bodies[bi+2],  bodies[bi+3],
+                                 bodies[bi+4],  bodies[bi+5],  bodies[bi+6],  bodies[bi+7],
+                                 bodies[bi+8],  bodies[bi+9],  bodies[bi+10], bodies[bi+11],
+                                 bodies[bi+12], bodies[bi+13], bodies[bi+14], bodies[bi+15]];
+                float[] bodyJ = [bodies[bj+0],  bodies[bj+1],  bodies[bj+2],  bodies[bj+3],
+                                 bodies[bj+4],  bodies[bj+5],  bodies[bj+6],  bodies[bj+7],
+                                 bodies[bj+8],  bodies[bj+9],  bodies[bj+10], bodies[bj+11],
+                                 bodies[bj+12], bodies[bj+13], bodies[bj+14], bodies[bj+15]];
+
+                if (shapeI == 0 && shapeJ == 0) {
+                    hit = collideAABB(bodyI, bodyJ, manifold);
+                }
+                if (shapeI == 1 && shapeJ == 1) {
+                    hit = collideCircle(bodyI, bodyJ, manifold);
+                }
+                if (shapeI == 1 && shapeJ == 0) {
+                    hit = collideCircleAABB(bodyI, bodyJ, manifold);
+                }
+                if (shapeI == 0 && shapeJ == 1) {
+                    hit = collideCircleAABB(bodyJ, bodyI, manifold);
+                    manifold[0] = manifold[0] * -1.0;
+                    manifold[1] = manifold[1] * -1.0;
+                }
+
+                if (hit == 1) {
+                    resolveCollision(bodyI, bodyJ, manifold);
+                    // Записать изменения обратно в основной массив
+                    int k = 0;
+                    while (k < BODY_SIZE) {
+                        bodies[bi + k] = bodyI[k];
+                        bodies[bj + k] = bodyJ[k];
+                        k = k + 1;
+                    }
+                }
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+}

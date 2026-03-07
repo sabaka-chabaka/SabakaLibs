@@ -1,155 +1,163 @@
-import "base/heap.sabaka";
-import "base/graph.sabaka";
-import "base/trie.sabaka";
+import "base/physics2d.sabaka";
+import "base/canvas.sabaka";
 
-print("=== heap.sabaka ===");
-
-// Min-heap
-float[] minH = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-int[] minSz = [0];
-heapMinPush(minH, minSz, 5.0);
-heapMinPush(minH, minSz, 3.0);
-heapMinPush(minH, minSz, 8.0);
-heapMinPush(minH, minSz, 1.0);
-heapMinPush(minH, minSz, 4.0);
-print("min peek: " + heapMinPeek(minH) + " (ожидается 1)");
-print("min pop:  " + heapMinPop(minH, minSz) + " (ожидается 1)");
-print("min pop:  " + heapMinPop(minH, minSz) + " (ожидается 3)");
-print("min pop:  " + heapMinPop(minH, minSz) + " (ожидается 4)");
-print("min pop:  " + heapMinPop(minH, minSz) + " (ожидается 5)");
-print("min pop:  " + heapMinPop(minH, minSz) + " (ожидается 8)");
-
-// Max-heap
-float[] maxH = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-int[] maxSz = [0];
-heapMaxPush(maxH, maxSz, 5.0);
-heapMaxPush(maxH, maxSz, 3.0);
-heapMaxPush(maxH, maxSz, 8.0);
-heapMaxPush(maxH, maxSz, 1.0);
-print("max peek: " + heapMaxPeek(maxH) + " (ожидается 8)");
-print("max pop:  " + heapMaxPop(maxH, maxSz) + " (ожидается 8)");
-print("max pop:  " + heapMaxPop(maxH, maxSz) + " (ожидается 5)");
-
-// Priority Queue
-float[] pqH = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-               0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-int[] pqSz = [0];
-pqPush(pqH, pqSz, 10.0);
-pqPush(pqH, pqSz, 2.0);
-pqPush(pqH, pqSz, 7.0);
-print("pq empty: " + pqEmpty(pqSz) + " (ожидается false)");
-print("pq size:  " + pqSize(pqSz)  + " (ожидается 3)");
-print("pq pop:   " + pqPop(pqH, pqSz) + " (ожидается 2)");
-print("pq pop:   " + pqPop(pqH, pqSz) + " (ожидается 7)");
+print("=== vec2 ===");
+float[] va = [3.0, 4.0];
+float[] vb = [1.0, 2.0];
+float[] vr = [0.0, 0.0];
+vec2Add(va, vb, vr);
+print("add: " + vr[0] + "," + vr[1] + " (ожидается 4,6)");
+vec2Sub(va, vb, vr);
+print("sub: " + vr[0] + "," + vr[1] + " (ожидается 2,2)");
+print("dot: " + vec2Dot(va, vb) + " (ожидается 11)");
+print("len: " + vec2Len(va) + " (ожидается 5)");
+vec2Norm(va, vr);
+print("norm: " + vr[0] + "," + vr[1] + " (ожидается 0.6,0.8)");
 
 print("");
-print("=== graph.sabaka ===");
-
-// Граф: 0-1, 0-2, 1-3, 2-3, 3-4
-//   0
-//  / \
-// 1   2
-//  \ /
-//   3
-//   |
-//   4
-int[] edges = [0, 1,
-               0, 2,
-               1, 3,
-               2, 3,
-               3, 4];
-int V = 5;
-int EC = 5;
-
-// BFS от 0
-int[] visited = [0, 0, 0, 0, 0];
-int[] order   = [0, 0, 0, 0, 0];
-int[] oCount  = [0];
-graphBFS(0, V, edges, EC, visited, order, oCount);
-print("BFS от 0 обошли: " + oCount[0] + " вершин (ожидается 5)");
-print("BFS[0]=" + order[0] + " (ожидается 0)");
-print("BFS[1]=" + order[1] + " (ожидается 1 или 2)");
-
-// DFS от 0
-int[] visited2 = [0, 0, 0, 0, 0];
-int[] order2   = [0, 0, 0, 0, 0];
-int[] oCount2  = [0];
-graphDFS(0, V, edges, EC, visited2, order2, oCount2);
-print("DFS от 0 обошли: " + oCount2[0] + " вершин (ожидается 5)");
-print("DFS[0]=" + order2[0] + " (ожидается 0)");
-
-// Дейкстра — раздельные массивы рёбер и весов
-int[] wFrom = [0, 0, 2, 1, 3];
-int[] wTo   = [1, 2, 3, 3, 4];
-float[] wW  = [4.0, 1.0, 2.0, 1.0, 3.0];
-float[] dist = [0.0, 0.0, 0.0, 0.0, 0.0];
-int[] prev   = [0, 0, 0, 0, 0];
-graphDijkstra(0, 5, wFrom, wTo, wW, 5, dist, prev);
-print("dist[0]=" + dist[0] + " (ожидается 0)");
-print("dist[1]=" + dist[1] + " (ожидается 4)");
-print("dist[2]=" + dist[2] + " (ожидается 1)");
-print("dist[3]=" + dist[3] + " (ожидается 3)");
-print("dist[4]=" + dist[4] + " (ожидается 6)");
-
-// Путь от 4 до 0
-int[] path    = [0, 0, 0, 0, 0];
-int[] pathLen = [0];
-graphPath(4, prev, path, pathLen);
-print("путь до 4: длина=" + pathLen[0] + " (ожидается 4)");
-print("path[0]=" + path[0] + " (ожидается 4)");
-print("path[1]=" + path[1] + " (ожидается 3)");
-print("path[2]=" + path[2] + " (ожидается 2)");
-print("path[3]=" + path[3] + " (ожидается 0)");
+print("=== bodyStep — свободное падение ===");
+float[] body = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                1.0, 1.0, 0.5, 0.3, 1.0, 0.5, 0.0, 1.0];
+bodyStep(body, 1.0, 0.0, 10.0);
+print("pos after 1s: " + body[0] + "," + body[1] + " (ожидается 0,10)");
+bodyStep(body, 1.0, 0.0, 10.0);
+print("pos after 2s: " + body[0] + "," + body[1] + " (ожидается 0,30)");
 
 print("");
-print("=== trie.sabaka ===");
+print("=== AABB коллизия ===");
+float[] manifold = [0.0, 0.0, 0.0];
+float[] boxA = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 0.0, 1.0, 1.0, 1.0];
+float[] boxB = [1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 0.0, 1.0, 1.0, 1.0];
+int hit = collideAABB(boxA, boxB, manifold);
+print("hit: " + hit + " depth: " + manifold[2] + " (ожидается 1, 0.5)");
+float[] boxC = [5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 0.0, 1.0, 1.0, 1.0];
+print("no hit: " + collideAABB(boxA, boxC, manifold) + " (ожидается 0)");
 
-int[] pool = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-int[] nc = [0];
-trieInit(pool, nc);
+print("");
+print("=== Circle коллизия ===");
+float[] cA = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 1.0, 1.0, 0.0, 1.0];
+float[] cB = [1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 1.0, 1.0, 0.0, 1.0];
+hit = collideCircle(cA, cB, manifold);
+print("hit: " + hit + " depth≈0.5: " + manifold[2] + " (ожидается 1)");
 
-trieInsert(pool, nc, "hello");
-trieInsert(pool, nc, "help");
-trieInsert(pool, nc, "world");
-trieInsert(pool, nc, "word");
-trieInsert(pool, nc, "sabaka");
+print("");
+print("=== Circle vs AABB ===");
+// circ pos=(0,1.5) r=0.8, box pos=(0,0) hw=1.5 hh=1.0 → closest y=1.0, dist=0.5 < 0.8
+float[] circ = [0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 1.0, 0.8, 0.0, 1.0];
+float[] box  = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.3, 0.0, 1.5, 1.0, 1.0];
+hit = collideCircleAABB(circ, box, manifold);
+print("hit: " + hit + " (ожидается 1)");
 
-print("search hello:  " + trieSearch(pool, "hello")  + " (ожидается true)");
-print("search help:   " + trieSearch(pool, "help")   + " (ожидается true)");
-print("search world:  " + trieSearch(pool, "world")  + " (ожидается true)");
-print("search sabaka: " + trieSearch(pool, "sabaka") + " (ожидается true)");
-print("search hell:   " + trieSearch(pool, "hell")   + " (ожидается false)");
-print("search xyz:    " + trieSearch(pool, "xyz")    + " (ожидается false)");
+print("");
+print("=== ВИЗУАЛИЗАЦИЯ: 3 шара в ящике ===");
+print("");
 
-print("prefix hel:  " + trieStartsWith(pool, "hel")  + " (ожидается true)");
-print("prefix wor:  " + trieStartsWith(pool, "wor")  + " (ожидается true)");
-print("prefix sab:  " + trieStartsWith(pool, "sab")  + " (ожидается true)");
-print("prefix xyz:  " + trieStartsWith(pool, "xyz")  + " (ожидается false)");
+// Мир 60x30, гравитация вниз
+int W = 60;
+int H = 30;
+float scaleX = 2.5;  // пикселей на единицу физики
+float scaleY = 1.0;
 
-print("count: " + trieCount(pool, nc) + " (ожидается 5)");
+// Физический мир: 24x30 единиц
+float worldW = 24.0;
+float worldH = 30.0;
+float grav   = 10.0;
+float dt     = 0.02;
+
+// Тела: 3 шара + 4 стенки (статичные AABB)
+float[] bodies = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+int[] nBodies = [0];
+
+// 3 шара: масса 1, упругость 0.7
+int ball0 = worldAddBody(bodies, nBodies,  6.0,  3.0, 1.0, 0.7, 0.2, 1, 1.5, 0.0);
+int ball1 = worldAddBody(bodies, nBodies, 12.0,  6.0, 1.0, 0.7, 0.2, 1, 1.5, 0.0);
+int ball2 = worldAddBody(bodies, nBodies, 18.0,  1.0, 1.0, 0.7, 0.2, 1, 1.5, 0.0);
+
+// Начальные скорости
+bodies[ball0 * BODY_SIZE + 2] = 3.0;
+bodies[ball1 * BODY_SIZE + 2] = -2.0;
+
+// Стенки (статичные): масса 0, толстые чтобы шары не проваливались
+int wallB = worldAddBody(bodies, nBodies, 12.0, 40.0, 0.0, 0.3, 0.5, 0, 14.0, 10.0); // пол
+int wallL = worldAddBody(bodies, nBodies, -5.0, 15.0, 0.0, 0.7, 0.5, 0, 5.0, 20.0); // левая
+int wallR = worldAddBody(bodies, nBodies, 29.0, 15.0, 0.0, 0.7, 0.5, 0, 5.0, 20.0); // правая
+
+// Вспомогательная печать кадра
+void printFrame(float[] bodies, int W, int H, float scaleX, float scaleY, string title) {
+    string[] rows = ["", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", ""];
+    canvasCreate(rows, W, H, " ");
+    canvasHLine(rows, H, 0, W - 1, H - 1, "=");
+    canvasVLine(rows, H, 0, 0, H - 1, "|");
+    canvasVLine(rows, H, W - 1, 0, H - 1, "|");
+
+    int b = 0;
+    while (b < 3) {
+        int base = b * BODY_SIZE;
+        float px = bodies[base + 0];
+        float py = bodies[base + 1];
+        float r  = bodies[base + 13];
+        int cx = floor(px * scaleX);
+        int cy = floor(py * scaleY);
+        if (cy >= H) { cy = H - 1; }
+        if (cy < 0)  { cy = 0; }
+        if (cx < 0)  { cx = 0; }
+        if (cx >= W) { cx = W - 1; }
+        int cr = floor(r * scaleX);
+        if (cr < 1) { cr = 1; }
+        string sym = "o";
+        if (b == 1) { sym = "#"; }
+        if (b == 2) { sym = "@"; }
+        canvasCircle(rows, H, cx, cy, cr, sym);
+        canvasSet(rows, H, cx, cy, sym);
+        b = b + 1;
+    }
+    print(title);
+    canvasPrintBorder(rows, W, H);
+    print("");
+}
+
+// 4 снимка: t=0, t=1с, t=2с, t=4с
+// stepsPerSec = 1/dt = 50
+
+printFrame(bodies, W, H, scaleX, scaleY, "t = 0.0s (старт)");
+
+int step = 0;
+while (step < 50) {
+    worldStep(bodies, nBodies[0], dt, 0.0, grav);
+    step = step + 1;
+}
+printFrame(bodies, W, H, scaleX, scaleY, "t = 1.0s");
+
+while (step < 100) {
+    worldStep(bodies, nBodies[0], dt, 0.0, grav);
+    step = step + 1;
+}
+printFrame(bodies, W, H, scaleX, scaleY, "t = 2.0s");
+
+while (step < 200) {
+    worldStep(bodies, nBodies[0], dt, 0.0, grav);
+    step = step + 1;
+}
+printFrame(bodies, W, H, scaleX, scaleY, "t = 4.0s (финал)");
+
+print("Финальные позиции:");
+int b = 0;
+while (b < 3) {
+    int base = b * BODY_SIZE;
+    print("  шар " + b + ": x=" + bodies[base+0] + " y=" + bodies[base+1]
+        + " vx=" + bodies[base+2] + " vy=" + bodies[base+3]);
+    b = b + 1;
+}

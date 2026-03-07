@@ -1,0 +1,197 @@
+import "math.sabaka";
+
+string canvasFilledRow(int n, string c) {
+    string row = "";
+    int i = 0;
+    while (i < n) { row = row + c; i = i + 1; }
+    return row;
+}
+
+void canvasCreate(string[] rows, int W, int H, string fill) {
+    int i = 0;
+    while (i < H) {
+        rows[i] = canvasFilledRow(W, fill);
+        i = i + 1;
+    }
+}
+
+void canvasSet(string[] rows, int H, int x, int y, string c) {
+    if (x < 0 || y < 0 || y >= H) { return; }
+    string row = rows[y];
+    if (x >= row.length) { return; }
+    string newRow = "";
+    int i = 0;
+    while (i < row.length) {
+        if (i == x) { newRow = newRow + c; }
+        else        { newRow = newRow + row[i]; }
+        i = i + 1;
+    }
+    rows[y] = newRow;
+}
+
+string canvasGet(string[] rows, int H, int x, int y) {
+    if (x < 0 || y < 0 || y >= H) { return " "; }
+    string row = rows[y];
+    if (x >= row.length) { return " "; }
+    return row[x];
+}
+
+void canvasPrint(string[] rows, int H) {
+    int i = 0;
+    while (i < H) {
+        print(rows[i]);
+        i = i + 1;
+    }
+}
+
+void canvasPrintBorder(string[] rows, int W, int H) {
+    string top = "+" + canvasFilledRow(W, "-") + "+";
+    print(top);
+    int i = 0;
+    while (i < H) {
+        print("|" + rows[i] + "|");
+        i = i + 1;
+    }
+    print(top);
+}
+
+void canvasHLine(string[] rows, int H, int x1, int x2, int y, string c) {
+    int x = x1;
+    if (x2 < x1) { x = x2; }
+    int xEnd = x2;
+    if (x1 > x2) { xEnd = x1; }
+    while (x <= xEnd) {
+        canvasSet(rows, H, x, y, c);
+        x = x + 1;
+    }
+}
+
+void canvasVLine(string[] rows, int H, int x, int y1, int y2, string c) {
+    int y = y1;
+    if (y2 < y1) { y = y2; }
+    int yEnd = y2;
+    if (y1 > y2) { yEnd = y1; }
+    while (y <= yEnd) {
+        canvasSet(rows, H, x, y, c);
+        y = y + 1;
+    }
+}
+
+void canvasLine(string[] rows, int H, int x1, int y1, int x2, int y2, string c) {
+    int dx = x2 - x1;
+    if (dx < 0) { dx = dx * -1; }
+    int dy = y2 - y1;
+    if (dy < 0) { dy = dy * -1; }
+
+    int sx = 1;
+    if (x1 > x2) { sx = -1; }
+    int sy = 1;
+    if (y1 > y2) { sy = -1; }
+
+    int err = dx - dy;
+    int x = x1;
+    int y = y1;
+
+    bool running = true;
+    while (running) {
+        canvasSet(rows, H, x, y, c);
+        if (x == x2 && y == y2) { running = false; }
+        else {
+            int e2 = err * 2;
+            if (e2 > dy * -1) { err = err - dy; x = x + sx; }
+            if (e2 < dx)      { err = err + dx; y = y + sy; }
+        }
+    }
+}
+
+void canvasRect(string[] rows, int H, int x1, int y1, int x2, int y2, string c) {
+    canvasHLine(rows, H, x1, x2, y1, c);
+    canvasHLine(rows, H, x1, x2, y2, c);
+    canvasVLine(rows, H, x1, y1, y2, c);
+    canvasVLine(rows, H, x2, y1, y2, c);
+}
+
+void canvasFillRect(string[] rows, int H, int x1, int y1, int x2, int y2, string c) {
+    int y = y1;
+    if (y2 < y1) { y = y2; }
+    int yEnd = y2;
+    if (y1 > y2) { yEnd = y1; }
+    while (y <= yEnd) {
+        canvasHLine(rows, H, x1, x2, y, c);
+        y = y + 1;
+    }
+}
+
+void canvasCircle(string[] rows, int H, int cx, int cy, int r, string c) {
+    int x = 0;
+    int y = r;
+    int d = 3 - 2 * r;
+    bool running = true;
+    while (running) {
+        canvasSet(rows, H, cx + x, cy + y, c);
+        canvasSet(rows, H, cx - x, cy + y, c);
+        canvasSet(rows, H, cx + x, cy - y, c);
+        canvasSet(rows, H, cx - x, cy - y, c);
+        canvasSet(rows, H, cx + y, cy + x, c);
+        canvasSet(rows, H, cx - y, cy + x, c);
+        canvasSet(rows, H, cx + y, cy - x, c);
+        canvasSet(rows, H, cx - y, cy - x, c);
+        if (x >= y) { running = false; }
+        else {
+            x = x + 1;
+            if (d > 0) { y = y - 1; d = d + 4 * (x - y) + 10; }
+            else       { d = d + 4 * x + 6; }
+        }
+    }
+}
+
+void canvasFill(string[] rows, int W, int H, int x, int y, string target, string fillC) {
+    if (canvasGet(rows, H, x, y) != target) { return; }
+    if (target == fillC) { return; }
+
+    int[] qx = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int[] qy = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    int head = 0;
+    int tail = 0;
+    qx[tail] = x; qy[tail] = y; tail = tail + 1;
+    canvasSet(rows, H, x, y, fillC);
+
+    while (head < tail) {
+        int cx = qx[head];
+        int cy = qy[head];
+        head = head + 1;
+
+        int[] nx = [cx+1, cx-1, cx,   cx  ];
+        int[] ny = [cy,   cy,   cy+1, cy-1];
+        int k = 0;
+        while (k < 4) {
+            int px = nx[k];
+            int py = ny[k];
+            if (px >= 0 && px < W && py >= 0 && py < H) {
+                if (canvasGet(rows, H, px, py) == target) {
+                    canvasSet(rows, H, px, py, fillC);
+                    qx[tail] = px; qy[tail] = py; tail = tail + 1;
+                }
+            }
+            k = k + 1;
+        }
+    }
+}

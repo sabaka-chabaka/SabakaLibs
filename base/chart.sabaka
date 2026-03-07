@@ -1,0 +1,147 @@
+import "canvas.sabaka";
+
+void chartBar(string[] labels, float[] values, int n, string barChar, int maxWidth) {
+    float maxVal = values[0];
+    int i = 1;
+    while (i < n) {
+        if (values[i] > maxVal) { maxVal = values[i]; }
+        i = i + 1;
+    }
+    if (maxVal == 0.0) { maxVal = 1.0; }
+
+    i = 0;
+    while (i < n) {
+        int barLen = floor(values[i] / maxVal * maxWidth);
+        string bar = "";
+        int j = 0;
+        while (j < barLen) { bar = bar + barChar; j = j + 1; }
+
+        string label = labels[i];
+        while (label.length < 10) { label = label + " "; }
+
+        print(label + " | " + bar + " " + values[i]);
+        i = i + 1;
+    }
+}
+
+void chartLine(float[] values, int count, int W, int H) {
+    string[] rows = ["", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", ""];
+    canvasCreate(rows, W, H, " ");
+
+    float minV = values[0];
+    float maxV = values[0];
+    int i = 1;
+    while (i < count) {
+        if (values[i] < minV) { minV = values[i]; }
+        if (values[i] > maxV) { maxV = values[i]; }
+        i = i + 1;
+    }
+    float rangeV = maxV - minV;
+    if (rangeV == 0.0) { rangeV = 1.0; }
+
+    canvasVLine(rows, H, 0, 0, H - 1, "|");
+    canvasHLine(rows, W, 0, W - 1, H - 1, "-");
+    canvasSet(rows, H, 0, H - 1, "+");
+
+    int prevX = -1;
+    int prevY = -1;
+    i = 0;
+    while (i < count) {
+        int x = 1 + floor((i) * (W - 2) / (count - 1));
+        int y = H - 2 - floor((values[i] - minV) / rangeV * (H - 2));
+        if (x >= W) { x = W - 1; }
+        if (y < 0)  { y = 0; }
+
+        if (prevX >= 0) {
+            canvasLine(rows, H, prevX, prevY, x, y, "*");
+        }
+        canvasSet(rows, H, x, y, "o");
+        prevX = x;
+        prevY = y;
+        i = i + 1;
+    }
+
+    canvasPrintBorder(rows, W, H);
+}
+
+void chartScatter(float[] xs, float[] ys, int n, int W, int H) {
+    string[] rows = ["", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", "", "", ""];
+    canvasCreate(rows, W, H, " ");
+
+    float minX = xs[0]; float maxX = xs[0];
+    float minY = ys[0]; float maxY = ys[0];
+    int i = 1;
+    while (i < n) {
+        if (xs[i] < minX) { minX = xs[i]; }
+        if (xs[i] > maxX) { maxX = xs[i]; }
+        if (ys[i] < minY) { minY = ys[i]; }
+        if (ys[i] > maxY) { maxY = ys[i]; }
+        i = i + 1;
+    }
+    float rangeX = maxX - minX; if (rangeX == 0.0) { rangeX = 1.0; }
+    float rangeY = maxY - minY; if (rangeY == 0.0) { rangeY = 1.0; }
+
+    canvasVLine(rows, H, 0, 0, H - 1, "|");
+    canvasHLine(rows, W, 0, W - 1, H - 1, "-");
+    canvasSet(rows, H, 0, H - 1, "+");
+
+    i = 0;
+    while (i < n) {
+        int x = 1 + floor((xs[i] - minX) / rangeX * (W - 2));
+        int y = H - 2 - floor((ys[i] - minY) / rangeY * (H - 2));
+        if (x >= W) { x = W - 1; }
+        if (y < 0)  { y = 0; }
+        canvasSet(rows, H, x, y, "*");
+        i = i + 1;
+    }
+
+    canvasPrintBorder(rows, W, H);
+}
+
+void chartHistogram(float[] values, int n, int bins, int W, int H) {
+    float minV = values[0]; float maxV = values[0];
+    int i = 1;
+    while (i < n) {
+        if (values[i] < minV) { minV = values[i]; }
+        if (values[i] > maxV) { maxV = values[i]; }
+        i = i + 1;
+    }
+    float rangeV = maxV - minV;
+    if (rangeV == 0.0) { rangeV = 1.0; }
+
+    float[] counts = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    i = 0;
+    while (i < n) {
+        int b = floor((values[i] - minV) / rangeV * bins);
+        if (b >= bins) { b = bins - 1; }
+        counts[b] = counts[b] + 1.0;
+        i = i + 1;
+    }
+
+    float maxCount = counts[0];
+    i = 1;
+    while (i < bins) {
+        if (counts[i] > maxCount) { maxCount = counts[i]; }
+        i = i + 1;
+    }
+    if (maxCount == 0.0) { maxCount = 1.0; }
+
+    string[] labels = ["", "", "", "", "", "", "", "", "", "",
+                       "", "", "", "", "", "", "", "", "", ""];
+    i = 0;
+    while (i < bins) {
+        labels[i] = "bin" + i;
+        i = i + 1;
+    }
+    print("Histogram (n=" + n + ", bins=" + bins + "):");
+    chartBar(labels, counts, bins, "#", W - 14);
+}
