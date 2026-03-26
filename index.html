@@ -1,86 +1,321 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой App</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SabakaCalc</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #1e1e2e;
-            color: #cdd6f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            gap: 24px;
-        }
+  body {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
 
-        h1 {
-            font-size: 28px;
-            font-weight: 600;
-            color: #cba6f7;
-        }
+  .app {
+    width: 360px;
+    background: #181825;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
-        .card {
-            background: #313244;
-            border-radius: 16px;
-            padding: 36px 48px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            min-width: 360px;
-        }
+  .header {
+    background: #11111b;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #313244;
+  }
+  .header-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red { background: #f38ba8; }
+  .dot-yel { background: #f9e2af; }
+  .dot-grn { background: #a6e3a1; }
+  .header-title { margin-left: 8px; font-size: 13px; color: #6c7086; letter-spacing: 1px; }
 
-        input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 2px solid #45475a;
-            background: #1e1e2e;
-            color: #cdd6f4;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+  .history {
+    padding: 16px 20px 8px;
+    min-height: 120px;
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .history::-webkit-scrollbar { width: 4px; }
+  .history::-webkit-scrollbar-thumb { background: #313244; border-radius: 4px; }
 
-        input:focus {
-            border-color: #cba6f7;
-        }
+  .hist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 10px;
+    background: #1e1e2e;
+    border-radius: 8px;
+    font-size: 13px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; } }
+  .hist-expr   { color: #6c7086; font-family: monospace; }
+  .hist-result { color: #cba6f7; font-weight: 600; font-family: monospace; }
+  .hist-empty  { color: #45475a; font-size: 13px; text-align: center; margin: auto; }
 
-        button {
-            width: 100%;
-            padding: 13px;
-            border-radius: 10px;
-            border: none;
-            background: #cba6f7;
-            color: #1e1e2e;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
+  .display {
+    padding: 8px 20px 4px;
+    text-align: right;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
+  .display-expr {
+    font-size: 14px;
+    color: #6c7086;
+    font-family: monospace;
+    min-height: 18px;
+    word-break: break-all;
+  }
+  .display-val {
+    font-size: 38px;
+    font-weight: 300;
+    color: #cdd6f4;
+    letter-spacing: -1px;
+    min-height: 48px;
+    word-break: break-all;
+    transition: color 0.15s;
+  }
+  .display-val.computing { color: #6c7086; font-size: 24px; }
+  .display-val.error     { color: #f38ba8; font-size: 22px; }
 
-        button:hover  { background: #b48fef; }
-        button:active { transform: scale(0.97); }
-        .card:hover{ transform: scale(1.05);}
+  .buttons {
+    padding: 12px 16px 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .btn {
+    border: none; border-radius: 12px;
+    font-size: 18px; font-weight: 500;
+    cursor: pointer; padding: 18px 0;
+    transition: transform 0.08s, filter 0.08s;
+    outline: none;
+  }
+  .btn:active { transform: scale(0.93); filter: brightness(0.85); }
+  .btn-num   { background: #313244; color: #cdd6f4; }
+  .btn-op    { background: #45475a; color: #89b4fa; }
+  .btn-eq    { background: #cba6f7; color: #1e1e2e; font-size: 22px; }
+  .btn-clear { background: #f38ba8; color: #1e1e2e; font-size: 15px; font-weight: 700; }
+  .btn-spec  { background: #313244; color: #a6e3a1; font-size: 14px; }
+  .btn-zero  { grid-column: span 2; text-align: left; padding-left: 28px; }
 
-        #result {
-            font-size: 15px;
-            color: #a6e3a1;
-            min-height: 22px;
-            text-align: center;
-        }
-    </style>
+  .status {
+    text-align: center; font-size: 11px;
+    color: #313244; padding: 0 0 10px;
+    letter-spacing: 0.5px;
+  }
+</style>
 </head>
 <body>
-    <h1>SabakaLang</h1>
-        <p>SabakaLang - это простой и мощный язык программирования.</p>
-            <p> На нём пишут самые различные гигачады, МГЕ братья и сабаки. </p>
+<div class="app">
+  <div class="header">
+    <div class="header-dot dot-red"></div>
+    <div class="header-dot dot-yel"></div>
+    <div class="header-dot dot-grn"></div>
+    <span class="header-title">SABAKACALC</span>
+  </div>
+
+  <div class="history" id="history">
+    <div class="hist-empty" id="histEmpty">история пуста</div>
+  </div>
+
+  <div class="display">
+    <div class="display-expr" id="dispExpr"></div>
+    <div class="display-val"  id="dispVal">0</div>
+  </div>
+
+  <div class="buttons">
+    <button class="btn btn-clear"        onclick="press('AC')">AC</button>
+    <button class="btn btn-spec"         onclick="press('±')">±</button>
+    <button class="btn btn-spec"         onclick="press('%')">%</button>
+    <button class="btn btn-op"           onclick="press('/')">÷</button>
+
+    <button class="btn btn-num"          onclick="press('7')">7</button>
+    <button class="btn btn-num"          onclick="press('8')">8</button>
+    <button class="btn btn-num"          onclick="press('9')">9</button>
+    <button class="btn btn-op"           onclick="press('*')">×</button>
+
+    <button class="btn btn-num"          onclick="press('4')">4</button>
+    <button class="btn btn-num"          onclick="press('5')">5</button>
+    <button class="btn btn-num"          onclick="press('6')">6</button>
+    <button class="btn btn-op"           onclick="press('-')">−</button>
+
+    <button class="btn btn-num"          onclick="press('1')">1</button>
+    <button class="btn btn-num"          onclick="press('2')">2</button>
+    <button class="btn btn-num"          onclick="press('3')">3</button>
+    <button class="btn btn-op"           onclick="press('+')">+</button>
+
+    <button class="btn btn-num btn-zero" onclick="press('0')">0</button>
+    <button class="btn btn-num"          onclick="press('.')">.</button>
+    <button class="btn btn-eq"           onclick="press('=')">=</button>
+  </div>
+  <div class="status" id="status">SabakaLang · built with SabakaUI</div>
+</div>
+
+<script>
+let expr       = '';
+let lastExpr   = '';
+let justEvaled = false;
+const ops      = ['+', '-', '*', '/'];
+
+
+function render() {
+  document.getElementById('dispExpr').textContent =
+    expr.replace(/\*/g,'×').replace(/\//g,'÷');
+  if (!justEvaled) {
+    const val = document.getElementById('dispVal');
+    if (val.className !== 'display-val computing') {
+      val.textContent = expr || '0';
+      val.className   = 'display-val';
+    }
+  }
+}
+
+function addHistory(expression, result) {
+  const hist  = document.getElementById('history');
+  const empty = document.getElementById('histEmpty');
+  if (empty) empty.remove();
+
+  const item  = document.createElement('div');
+  item.className = 'hist-item';
+
+  const left  = document.createElement('span');
+  left.className   = 'hist-expr';
+  left.textContent = expression.replace(/\*/g,'×').replace(/\//g,'÷');
+
+  const right = document.createElement('span');
+  right.className   = 'hist-result';
+  right.textContent = '= ' + result;
+
+  item.appendChild(left);
+  item.appendChild(right);
+  hist.appendChild(item);
+  hist.scrollTop = hist.scrollHeight;
+}
+
+function press(key) {
+  const isOp = ops.includes(key);
+
+  if (key === 'AC') {
+    expr = ''; justEvaled = false;
+    const val = document.getElementById('dispVal');
+    val.textContent = '0'; val.className = 'display-val';
+    render(); return;
+  }
+
+  if (key === '±') {
+    if (expr.startsWith('-')) expr = expr.slice(1);
+    else if (expr)            expr = '-' + expr;
+    render(); return;
+  }
+
+  if (key === '=') {
+    if (!expr) return;
+    lastExpr = expr;
+    // Показать "вычисляю..."
+    const val = document.getElementById('dispVal');
+    val.textContent = '…'; val.className = 'display-val computing';
+    document.getElementById('dispExpr').textContent =
+      expr.replace(/\*/g,'×').replace(/\//g,'÷');
+    justEvaled = true;
+    // Разобрать lastExpr на a, op, b и отправить в SabakaLang
+    {
+      const binOps = ['+','-','*','/','%'];
+      let opIdx = -1, opChar = '+';
+      // Ищем последний бинарный оператор (не первый символ — там может быть унарный -)
+      for (let k = lastExpr.length - 1; k >= 1; k--) {
+        if (binOps.includes(lastExpr[k])) { opIdx = k; opChar = lastExpr[k]; break; }
+      }
+      let msgA, msgB;
+      if (opIdx >= 1) {
+        msgA = lastExpr.slice(0, opIdx);
+        msgB = lastExpr.slice(opIdx + 1) || '0';
+      } else {
+        msgA = lastExpr; msgB = '0'; opChar = '+';
+      }
+      if (window.sabaka) sabaka.send('calc', msgA + '|' + opChar + '|' + msgB);
+    }
+    return;
+  }
+
+  // После вычисления: цифра — начать заново, оператор — продолжить с результата
+  if (justEvaled && !isOp) { expr = ''; justEvaled = false; }
+  if (justEvaled &&  isOp) { justEvaled = false; }
+
+  // Не допускать двойную точку в числе
+  if (key === '.') {
+    const parts = expr.split(/[+\-*/]/);
+    if (parts[parts.length-1].includes('.')) return;
+  }
+  // Заменить последний оператор если вводят новый
+  if (isOp && expr && ops.includes(expr[expr.length-1]))
+    expr = expr.slice(0, -1);
+
+  expr += key;
+  render();
+}
+
+// Клавиатура
+document.addEventListener('keydown', e => {
+  if (e.key >= '0' && e.key <= '9') press(e.key);
+  else if (e.key === '+') press('+');
+  else if (e.key === '-') press('-');
+  else if (e.key === '*') press('*');
+  else if (e.key === '/') { e.preventDefault(); press('/'); }
+  else if (e.key === '.') press('.');
+  else if (e.key === '%') press('%');
+  else if (e.key === 'Enter' || e.key === '=') press('=');
+  else if (e.key === 'Backspace') {
+    if (justEvaled) { expr = ''; justEvaled = false; }
+    else             expr = expr.slice(0, -1);
+    render();
+  }
+  else if (e.key === 'Escape') press('AC');
+});
+
+// ── SabakaUI bridge ───────────────────────────────────────────────────────────
+// window.sabaka инжектируется мостом ДО загрузки страницы (AddScriptToExecuteOnDocumentCreatedAsync)
+// Просто переопределяем _set напрямую.
+window.sabaka._set = function(key, val) {
+  if (key === 'sabakaResult') {
+    const dispVal = document.getElementById('dispVal');
+    dispVal.textContent = val;
+    dispVal.className   = 'display-val';
+    addHistory(lastExpr, val);
+    expr = val;
+    justEvaled = true;
+  }
+  if (key === 'sabakaError') {
+    const dispVal = document.getElementById('dispVal');
+    dispVal.textContent = 'ошибка';
+    dispVal.className   = 'display-val error';
+    expr = '';
+    justEvaled = false;
+  }
+  if (key === 'status') {
+    document.getElementById('status').textContent = val;
+  }
+};
+</script>
 </body>
 </html>

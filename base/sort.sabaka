@@ -1,6 +1,6 @@
 import "list.sabaka";
 
-void sortInts(int[] arr, int len) {
+int[] sortInts(int[] arr, int len) {
     int i = 0;
     while (i < len - 1) {
         int j = 0;
@@ -14,9 +14,10 @@ void sortInts(int[] arr, int len) {
         }
         i = i + 1;
     }
+    return arr;
 }
 
-void sortFloats(float[] arr, int len) {
+float[] sortFloats(float[] arr, int len) {
     int i = 0;
     while (i < len - 1) {
         int j = 0;
@@ -30,9 +31,10 @@ void sortFloats(float[] arr, int len) {
         }
         i = i + 1;
     }
+    return arr;
 }
 
-void sortStrings(string[] arr, int len) {
+string[] sortStrings(string[] arr, int len) {
     int i = 0;
     while (i < len - 1) {
         int j = 0;
@@ -65,7 +67,9 @@ void sortStrings(string[] arr, int len) {
         }
         i = i + 1;
     }
+    return arr;
 }
+
 
 void sortIntList(List<int> list) {
     sortInts(list.values, list.values.length);
