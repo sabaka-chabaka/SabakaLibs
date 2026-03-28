@@ -1,0 +1,148 @@
+class DecimalFraction {
+    int wholePart;
+    int fractionalPart;
+
+    void DecimalFraction(int InWholePart, int InFractionalPart) {
+        wholePart = InWholePart;
+        fractionalPart = InFractionalPart;
+    }
+
+    DecimalFraction add(DecimalFraction other) {
+        int t1 = wholePart * 100;
+        if (wholePart < 0) { t1 = t1 - fractionalPart; } else { t1 = t1 + fractionalPart; }
+        int t2 = other.wholePart * 100;
+        if (other.wholePart < 0) { t2 = t2 - other.fractionalPart; } else { t2 = t2 + other.fractionalPart; }
+        int res = t1 + t2;
+        int dW = res / 100;
+        int dF = res - (dW * 100);
+        if (dF < 0) { dF = 0 - dF; }
+        return new DecimalFraction(dW, dF);
+    }
+
+    DecimalFraction subtract(DecimalFraction other) {
+        int t1 = wholePart * 100;
+        if (wholePart < 0) { t1 = t1 - fractionalPart; } else { t1 = t1 + fractionalPart; }
+        int t2 = other.wholePart * 100;
+        if (other.wholePart < 0) { t2 = t2 - other.fractionalPart; } else { t2 = t2 + other.fractionalPart; }
+        int res = t1 - t2;
+        int dW = res / 100;
+        int dF = res - (dW * 100);
+        if (dF < 0) { dF = 0 - dF; }
+        return new DecimalFraction(dW, dF);
+    }
+
+    DecimalFraction multiply(DecimalFraction other) {
+        int t1 = wholePart * 100;
+        if (wholePart < 0) { t1 = t1 - fractionalPart; } else { t1 = t1 + fractionalPart; }
+        int t2 = other.wholePart * 100;
+        if (other.wholePart < 0) { t2 = t2 - other.fractionalPart; } else { t2 = t2 + other.fractionalPart; }
+        int res = (t1 * t2) / 100;
+        int dW = res / 100;
+        int dF = res - (dW * 100);
+        if (dF < 0) { dF = 0 - dF; }
+        return new DecimalFraction(dW, dF);
+    }
+
+    void print() {
+        print(wholePart + "," + fractionalPart);
+    }
+}
+
+class Fraction {
+    int numerator;
+    int denominator;
+
+    void Fraction(int InNumerator, int InDenominator) {
+        int a = InNumerator;
+        if (a < 0) { a = 0 - a; }
+        int b = InDenominator;
+        if (b < 0) { b = 0 - b; }
+        while (b != 0) {
+            int t = b;
+            b = a - (a / b * b);
+            a = t;
+        }
+        numerator = InNumerator / a;
+        denominator = InDenominator / a;
+    }
+
+    Fraction add(Fraction other) {
+        return new Fraction(numerator * other.denominator + other.numerator * denominator, denominator * other.denominator);
+    }
+
+    Fraction subtract(Fraction other) {
+        return new Fraction(numerator * other.denominator - other.numerator * denominator, denominator * other.denominator);
+    }
+
+    Fraction multiply(Fraction other) {
+        return new Fraction(numerator * other.numerator, denominator * other.denominator);
+    }
+
+    Fraction divide(Fraction other) {
+        return new Fraction(numerator * other.denominator, denominator * other.numerator);
+    }
+
+    DecimalFraction toDecimal() {
+        int dW = numerator / denominator;
+        int rem = numerator - (dW * denominator);
+        int dF = (rem * 100) / denominator;
+        if (dF < 0) { dF = 0 - dF; }
+        return new DecimalFraction(dW, dF);
+    }
+
+    void print() {
+        print(numerator + "/" + denominator);
+    }
+}
+
+class MixedFraction {
+    int wholePart;
+    int numerator;
+    int denominator;
+
+    void MixedFraction(int InWholePart, int InNumerator, int InDenominator) {
+        int a = InNumerator;
+        if (a < 0) { a = 0 - a; }
+        int b = InDenominator;
+        if (b < 0) { b = 0 - b; }
+        while (b != 0) {
+            int t = b;
+            b = a - (a / b * b);
+            a = t;
+        }
+        wholePart = InWholePart;
+        numerator = InNumerator / a;
+        denominator = InDenominator / a;
+    }
+
+    Fraction toFraction() {
+        int tN = wholePart * denominator;
+        if (wholePart < 0) { tN = tN - numerator; } else { tN = tN + numerator; }
+        return new Fraction(tN, denominator);
+    }
+
+    MixedFraction add(MixedFraction other) {
+        Fraction res = toFraction().add(other.toFraction());
+        return new MixedFraction(res.numerator / res.denominator, res.numerator - (res.numerator / res.denominator * res.denominator), res.denominator);
+    }
+
+    MixedFraction subtract(MixedFraction other) {
+        Fraction res = toFraction().subtract(other.toFraction());
+        return new MixedFraction(res.numerator / res.denominator, res.numerator - (res.numerator / res.denominator * res.denominator), res.denominator);
+    }
+
+    MixedFraction multiply(MixedFraction other) {
+        Fraction res = toFraction().multiply(other.toFraction());
+        return new MixedFraction(res.numerator / res.denominator, res.numerator - (res.numerator / res.denominator * res.denominator), res.denominator);
+    }
+
+    MixedFraction divide(MixedFraction other) {
+        Fraction res = toFraction().divide(other.toFraction());
+        return new MixedFraction(res.numerator / res.denominator, res.numerator - (res.numerator / res.denominator * res.denominator), res.denominator);
+    }
+
+    DecimalFraction toDecimal() {
+        Fraction f = toFraction();
+        return f.toDecimal();
+    }
+}

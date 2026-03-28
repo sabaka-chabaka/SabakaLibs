@@ -1,84 +1,93 @@
 import "list.sabaka";
 
 int[] sortInts(int[] arr, int len) {
-    int i = 0;
-    while (i < len - 1) {
-        int j = 0;
-        while (j < len - i - 1) {
-            if (arr[j] > arr[j + 1]) {
-                int tmp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = tmp;
-            }
-            j = j + 1;
+    int i = 1;
+    while (i < len) {
+        int key = arr[i];
+        int j = i - 1;
+        
+        while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
         }
+        arr[j + 1] = key;
         i = i + 1;
     }
     return arr;
 }
 
 float[] sortFloats(float[] arr, int len) {
-    int i = 0;
-    while (i < len - 1) {
-        int j = 0;
-        while (j < len - i - 1) {
-            if (arr[j] > arr[j + 1]) {
-                float tmp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = tmp;
-            }
-            j = j + 1;
+    int i = 1;
+    while (i < len) {
+        float key = arr[i];
+        int j = i - 1;
+        while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
         }
+        arr[j + 1] = key;
         i = i + 1;
     }
     return arr;
 }
 
+
 string[] sortStrings(string[] arr, int len) {
-    int i = 0;
-    while (i < len - 1) {
-        int j = 0;
-        while (j < len - i - 1) {
-            bool swap = false;
-            string a = arr[j];
-            string b = arr[j + 1];
-            int minLen = a.length;
-            if (b.length < minLen) { minLen = b.length; }
+    int i = 1;
+    while (i < len) {
+        string key = arr[i];
+        int j = i - 1;
+        
+        bool shouldMove = true;
+        while (j >= 0 && shouldMove) {
+            string current = arr[j];
+            
+            bool isGreater = false;
+            int minLen = current.length;
+            if (key.length < minLen) { minLen = key.length; }
+            
             int k = 0;
             bool decided = false;
             while (k < minLen && decided == false) {
-                if (a[k] > b[k]) {
-                    swap = true;
+                if (current[k] > key[k]) {
+                    isGreater = true;
                     decided = true;
-                } else if (a[k] < b[k]) {
+                } else if (current[k] < key[k]) {
                     decided = true;
                 }
                 k = k + 1;
             }
-            if (decided == false && a.length > b.length) {
-                swap = true;
+            if (decided == false && current.length > key.length) {
+                isGreater = true;
             }
-            if (swap) {
-                string tmp = arr[j];
-                arr[j] = arr[j + 1];
-                arr[j + 1] = tmp;
+
+            if (isGreater) {
+                arr[j + 1] = arr[j];
+                j = j - 1;
+            } else {
+                shouldMove = false;
             }
-            j = j + 1;
         }
+        arr[j + 1] = key;
         i = i + 1;
     }
     return arr;
 }
 
-
-void sortIntList(List<int> list) {
-    sortInts(list.values, list.values.length);
+List<int> sortIntList(List<int> list) {
+    List<int> list = new List<int>();
+    list.values = sortInts(list.values, list.values.length);
+    return list;
 }
 
-void sortFloatList(List<float> list) {
-    sortFloats(list.values, list.values.length);
+List<float> sortFloatList(List<float> list) {
+    List<float> list = new List<float>();
+    list.values = sortFloats(list.values, list.values.length);
+    return list;
 }
 
-void sortStringList(List<string> list) {
-    sortStrings(list.values, list.values.length);
+List<string> sortStringList(List<string> list) {
+    List<string> list = new List<string>();
+    list.values = sortStrings(list.values, list.values.length);
+    return list;
 }
